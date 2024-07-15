@@ -1,0 +1,174 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <title>ESP32 Peplink Fob Configuration</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script type="text/javascript">
+
+    var clientScope = "read-write";
+    function initiateReboot() {
+      var xh = new XMLHttpRequest();
+      xh.onreadystatechange = function () {
+        if (xh.readyState == 4) {
+          if (xh.status == 200) {
+            document.open();
+            document.write(xh.responseText);
+            document.close();
+          }
+        }
+      };
+      xh.open("POST", "/reboot", true);
+      xh.send(json);
+    }
+
+    function clearCookies() {
+      var xh = new XMLHttpRequest();
+      xh.onreadystatechange = function () {
+        if (xh.readyState == 4) {
+          if (xh.status == 200) {
+            document.open();
+            document.write(xh.responseText);
+            document.close();
+          }
+        }
+      };
+      xh.open("POST", "/cookies", true);
+      xh.send(json);
+    }
+
+    function refreshLogin() {
+      var xh = new XMLHttpRequest();
+      xh.onreadystatechange = function () {
+        if (xh.readyState == 4) {
+          if (xh.status == 200) {
+            document.open();
+            document.write(xh.responseText);
+            document.close();
+          }
+        }
+      };
+      xh.open("POST", "/login", true);
+      xh.send(json);
+    }
+
+    function loadValues() {
+      var xh = new XMLHttpRequest();
+      xh.onreadystatechange = function () {
+        if (xh.readyState == 4) {
+          if (xh.status == 200) {
+            var res = JSON.parse(xh.responseText);
+            document.getElementById("wifi1ssid").value = res.wifi1ssid;
+            document.getElementById("wifi1password").value = res.wifi1password;
+            document.getElementById("wifi2ssid").value = res.wifi2ssid;
+            document.getElementById("wifi2password").value = res.wifi2password;
+            document.getElementById("ip").value = res.ip;
+            document.getElementById("port").value = res.port;
+            document.getElementById("username").value = res.username;
+            document.getElementById("password").value = res.password;
+            document.getElementById("clientname").value = res.clientname;
+            document.getElementById("wifitimeout").value = res.wifitimeout;
+            if (res.clientscope === "read-write") {
+              document.getElementById("read-write").checked = true;
+              document.getElementById("read-only").checked = false;
+            }
+            else {
+              document.getElementById("read-write").checked = false;
+              document.getElementById("read-only").checked = true;
+            }
+          }
+        }
+      };
+      xh.open("GET", "/settings", true);
+      xh.send(null);
+    };
+
+    function onBodyLoad() {
+      loadValues();
+
+      const form = document.forms[0];
+      form.onsubmit = e => {
+        e.preventDefault();
+        const fd = new FormData();
+        const props = {};
+        for (let element of form.elements) {
+          if (element.type !== "submit" && element.type !== "radio") {
+            props[element.name] = element.value;
+            fd.append(element.name, element.value);
+          }
+        }
+
+        const clientScopeButtons = document.getElementsByName("clientscope");
+        for (const clientScopeButton of clientScopeButtons) {
+          if (clientScopeButton.checked) {
+            props[clientScopeButton.name] = clientScopeButton.id;
+            break;
+          }
+        }
+
+        const json = JSON.stringify(props);
+        console.log(json);
+
+        var xh = new XMLHttpRequest();
+        xh.onreadystatechange = function () {
+          if (xh.readyState == 4) {
+            if (xh.status == 200) {
+              document.open();
+              document.write(xh.responseText);
+              document.close();
+            }
+          }
+        };
+        xh.open("POST", "/settings", true);
+        xh.send(json);
+
+      }
+
+    }
+
+  </script>
+</head>
+
+<body onload="onBodyLoad()" style="margin-bottom:50px;">
+  <h1>Admin</h1>
+  <button onclick="clearCookies()">
+    Delete auth key
+  </button>
+  <button onclick="initiateReboot()">
+    Reboot
+  </button>
+  <button onclick="refreshLogin()">Refresh login</button>
+  <h1>Firmware Update</h1>
+  <button onclick="window.location.href='/update';">
+    Go to Update Page
+  </button>
+  <h1>Edit Settings</h1>
+  <form action="/settings" method="POST">
+    <p>Router1 SSID : <input type="text" name="wifi1ssid" id="wifi1ssid" placeholder="Router SSID" required></p>
+    <p>Router1 Password : <input type="text" name="wifi1password" id="wifi1password" placeholder="Router Password"
+        required></p>
+    <p>Router2 SSID : <input type="text" name="wifi2ssid" id="wifi2ssid" placeholder="Router SSID" required></p>
+    <p>Router2 Password : <input type="text" name="wifi2password" id="wifi2password" placeholder="Router Password"
+        required></p>
+    <br>
+    <p>Router IP : <input type="text" name="ip" id="ip" placeholder="Router IP" required></p>
+    <p>Router Port : <input type="number" min="0" max="65535" name="port" id="port" placeholder="Router Port" required>
+    </p>
+    <p>Router API Username : <input type="text" name="username" id="username" placeholder="Router API Username"
+        required></p>
+    <p>Router API Password : <input type="text" name="password" id="password" placeholder="Router API Password"
+        required></p>
+    <br>
+    <p>Router Client Name : <input type="text" name="clientname" id="clientname" placeholder="Router Client Name"
+        required></p>
+    <p>Router Client Scope : <br>
+      <input type="radio" name="clientscope" id="read-write"><label>Read-write</label><br>
+      <input type="radio" name="clientscope" id="read-only"><label>Read-only</label><br>
+    </p>
+    <p>Wi-Fi connect timeout : <input type="number" min="5000" name="wifitimeout" id="wifitimeout"
+        placeholder="Wi-Fi connect timeout" required></p>
+    <input type="submit" value="Submit">
+  </form>
+</body>
+
+</html>
