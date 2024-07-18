@@ -9,7 +9,7 @@
 #include "config.h"
 #include "utils.h"
 
-#include "minu.hpp"
+#include "Minu/minu.hpp"
 #include "ui.h"
 #include <vector>
 

@@ -2,7 +2,7 @@
 #include <WiFi.h>
 #include <ArduinoUniqueID.h>
 
-#include "minu.hpp"
+#include "Minu/minu.hpp"
 #include "ui.h"
 #include "utils.h"
 #include "config.h"
@@ -1305,7 +1305,7 @@ void countdownTask(void *arg)
     delay(10);
 
   if (countdownType == UI_COUNTDOWN_TYPE_WIFI)
-    M5.Lcd.printf("SSID: %s\n\n", WiFi.SSID().c_str());
+    M5.Lcd.printf("\nSSID: %s\n\n", WiFi.SSID().c_str());
 
   const int cursorX = M5.Lcd.getCursorX();
   const int cursorY = M5.Lcd.getCursorY();

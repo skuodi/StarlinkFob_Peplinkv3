@@ -1,7 +1,7 @@
 #ifndef _M5CP2_UI_H_
 #define _M5CP2_UI_H_
 
-#include "minu.hpp"
+#include "Minu/minu.hpp"
 #include "config.h"
 
 /// Variables used to keep track of button states
