@@ -1,0 +1,3 @@
+[submodule "StarlinkFob_Peplink_v3/Minu"]
+	path = StarlinkFob_Peplink_v3/Minu
+	url = https://github.com/skuodi/Minu

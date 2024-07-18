@@ -4,7 +4,7 @@
 #include "minu.hpp"
 #include "config.h"
 
-/// Variables used to keep track of2 button states
+/// Variables used to keep track of button states
 extern long currentTime;
 extern bool longPressA;
 extern bool longPressB;
