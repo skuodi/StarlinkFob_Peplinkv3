@@ -13,6 +13,9 @@
 #include <HTTPUpdateServer.h>
 #include <SPIFFS.h>
 #include <Preferences.h>
+#include "SHT3X.h"
+#include "QMP6988.h"
+
 #include "PeplinkAPI.h"
 #include "config.h"
 
@@ -63,6 +66,13 @@ typedef struct
   uint64_t lastShutdownRuntime;
 } ShutdownTimestamp_t;
 
+typedef struct 
+{
+  char lastAlertTime[20];
+  float lastAlertThresh;
+  float lastAlertTemp;
+} AlertTimestamp_t;
+
 /// @brief Handle of the local HTTP server
 extern WebServer httpServer;
 
@@ -98,6 +108,15 @@ extern PeplinkRouter router;
 
 extern bool httpServerStarted;
 
+extern SHT3X sht;
+extern QMP6988 qmp;
+extern bool shtSensorAvailable;
+extern bool qmpSensorAvailable;
+
+extern String lastAlertTime;
+extern float lastAlertThresh;
+extern float lastAlertTemp;
+
 /// @brief Overwrite user credentials in runtime variables with their hard-coded default values 
 void resetPreferences();
 
@@ -116,6 +135,9 @@ void retrieveStoredCredentials();
 void restorePreferences();
 
 void retrieveLastShutdownInfo();
+
+///@brief Retrieve info on last over-temperature alert
+void retrieveLastAlertInfo();
 
 /// @brief Start the local webserver
 void startHttpServer();

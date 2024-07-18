@@ -26,6 +26,7 @@ typedef enum
 typedef enum
 {
   UI_UPDATE_TYPE_TIME = 1,
+  UI_UPDATE_TYPE_SENSORS,
   UI_UPDATE_TYPE_ROUTER_INFO,
   UI_UPDATE_TYPE_FOB_INFO,
   UI_UPDATE_TYPE_PING,
@@ -62,6 +63,7 @@ size_t routerWANListPageId;
 size_t routerWANInfoPageId;
 size_t routerWANSummaryPageId;
 size_t timePageId;
+size_t sensorsPageId;
 size_t countdownPageId;
 size_t fobInfoPageId;
 size_t factoryResetPageId;
@@ -116,6 +118,11 @@ void goToWiFiPage(void *arg = NULL)
 void goToTimePage(void *arg = NULL)
 {
   menu.goToPage(timePageId);
+}
+
+void goToSensorsPage(void *arg = NULL)
+{
+  menu.goToPage(sensorsPageId);
 }
 
 void goToWiFiPromptPage(void *arg = NULL)
@@ -399,6 +406,63 @@ void lcdPrintTime(void *arg = NULL)
     M5.Lcd.println("Last Run:Unknown");
 }
 
+void lcdPrintSensors(void* arg = NULL)
+{
+  if(shtSensorAvailable && sht.update())
+  {
+    if(sht.fTemp > TEMPERATURE_ALERT_THRESH_F)
+    {
+      M5.Lcd.fillScreen(RED);
+      M5.Lcd.setCursor(0, 0);
+      M5.Lcd.setTextColor(WHITE, RED);
+      M5.Lcd.setTextSize(TEXT_SIZE_DEFAULT);
+      M5.Lcd.println("__OVER TEMPERATURE__\n");
+      M5.Lcd.printf("  Threshold: %dF\n\n", TEMPERATURE_ALERT_THRESH_F);
+      M5.Lcd.setTextSize(5);
+      M5.Lcd.printf(" %.2fF\n\n", sht.fTemp);
+      M5.Lcd.setTextSize(TEXT_SIZE_DEFAULT);
+      M5.Lcd.setTextColor(WHITE, BLACK);
+      
+      AlertTimestamp_t aTime;
+      auto dt = M5.Rtc.getDateTime();
+      snprintf(aTime.lastAlertTime, sizeof(aTime.lastAlertTime), "%02d/%02d/%04d %02d:%02dH",
+                dt.date.date, dt.date.month, dt.date.year,
+                dt.time.hours, dt.time.minutes);
+      aTime.lastAlertTemp = sht.fTemp;
+      aTime.lastAlertThresh = TEMPERATURE_ALERT_THRESH_F;
+
+      Serial.printf("Over-temperature alert\n\tThreshold: %dF\n\tTemperature: %fF\n\tTimestamp: %s\n",
+                    TEMPERATURE_ALERT_THRESH_F, aTime.lastAlertTemp, aTime.lastAlertTime);
+
+      Preferences alertPrefs;
+      if (alertPrefs.begin(TEMPERATURE_ALERT_NAMESPACE, false))
+      {
+          alertPrefs.clear();
+          if(alertPrefs.putBytes(TEMPERATURE_ALERT_NAMESPACE, &aTime, sizeof(aTime)))
+            Serial.println("Saved alert timestamp to NVS!");
+      }
+      alertPrefs.end();
+      delay(100);
+      return;
+    }
+    M5.Lcd.fillScreen(BLACK);
+    M5.Lcd.setCursor(0, 0);
+    M5.Lcd.println("______SENSORS_______\n");
+    M5.Lcd.printf("%%RH :%.2f%% @ %.2fF\n", sht.humidity, sht.fTemp);
+  }
+  else
+    M5.Lcd.println("\nSHT sensor unavailable!");
+
+  if(qmpSensorAvailable && qmp.update())
+  {
+    M5.Lcd.printf("Temp:%.4f C\n", qmp.cTemp);
+    M5.Lcd.printf("Pres:%.4f Pa\n", qmp.pressure);
+    M5.Lcd.printf("Alt :%.4f m\n", qmp.altitude);
+  }
+  else
+    M5.Lcd.println("QMP sensor unavailable!\n");
+}
+
 /// @brief Get the status of WAN connections
 void printRouterWanStatus(void* arg = NULL)
 {
@@ -551,6 +615,13 @@ void startDataUpdate(void *arg = NULL)
   UiUpdateType ut;
   if (menu.currentPageId() == timePageId)
     ut = UI_UPDATE_TYPE_TIME;
+  else if (menu.currentPageId() == sensorsPageId)
+  {
+    ut = UI_UPDATE_TYPE_SENSORS;
+    
+    shtSensorAvailable = sht.begin(&Wire, SHT3X_I2C_ADDR, 0, 26, 400000U);
+    qmpSensorAvailable = qmp.begin(&Wire, QMP6988_SLAVE_ADDRESS_L, 0, 26, 400000U);
+  }
   else if (menu.currentPageId() == routerWANInfoPageId)
     ut = UI_UPDATE_TYPE_ROUTER_INFO;
   else if (menu.currentPageId() == fobInfoPageId)
@@ -935,6 +1006,7 @@ void uiMenuInit(void)
   homePage.addItem(goToPingTargetsPage, "Network Diags", NULL);
   homePage.addItem(goToRouterPage, "Router", NULL);
   homePage.addItem(goToTimePage, "Time", NULL);
+  homePage.addItem(goToSensorsPage, "Sensors", NULL);
   homePage.addItem(goToFobInfoPage, "Fob Info", NULL);
   homePage.addItem(startShutdownCountdown, "ShutDown", NULL);
   homePage.addItem(startRebootCountdown, "Reboot", NULL);
@@ -1043,6 +1115,13 @@ void uiMenuInit(void)
   simInfoPage.setClosedCallback(pageClosedCallback);
   simInfoPage.setRenderedCallback(showSimInfo);
   simInfoPageId = menu.addPage(simInfoPage);
+
+  MinuPage sensorsPage("SENSORS", menu.numPages(), true);
+  sensorsPage.addItem(goToHomePage, NULL, NULL);
+  sensorsPage.setOpenedCallback(pageOpenedCallback);
+  sensorsPage.setClosedCallback(stopDataUpdate);
+  sensorsPage.setRenderedCallback(startDataUpdate);
+  sensorsPageId = menu.addPage(sensorsPage);
 
   MinuPage timePage("TIME", menu.numPages(), true);
   timePage.addItem(goToHomePage, NULL, NULL);
@@ -1461,6 +1540,8 @@ void dataUpdateTask(void *arg)
 
     if (updateType == UI_UPDATE_TYPE_TIME)
       lcdPrintTime();
+    else if(updateType == UI_UPDATE_TYPE_SENSORS)
+      lcdPrintSensors();
     else if (updateType == UI_UPDATE_TYPE_ROUTER_INFO)
       lcdPrintRouterWANInfo();
     else if (updateType == UI_UPDATE_TYPE_FOB_INFO)

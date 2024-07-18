@@ -64,6 +64,11 @@
 /// @brief Namespace where timestamps are stored in NVS
 #define TIMESTAMP_NAMESPACE   "timestamps"
 
+/// @brief Namespace where over-temperature alert logs are stored in NVS
+#define TEMPERATURE_ALERT_NAMESPACE   "alert-log"
+
+#define TEMPERATURE_ALERT_THRESH_F      120.f // Degrees farenheight
+
 /// @brief Define NTP servers for time sync
 #define NTP_SERVER1             "pool.ntp.org"
 #define NTP_SERVER2             "time.nist.gov"

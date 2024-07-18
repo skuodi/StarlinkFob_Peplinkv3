@@ -4,6 +4,9 @@
 #include <HTTPUpdateServer.h>
 #include "time.h"
 #include "esp_sntp.h"
+#include "SHT3X.h"
+#include "QMP6988.h"
+
 #include "PeplinkAPI.h"
 #include "secrets.h"
 #include "config.h"
@@ -62,6 +65,15 @@ uint64_t lastShutdownRuntime;
 PeplinkRouter router;
 Preferences routerPrefs;
 Preferences cookiePrefs;
+
+SHT3X sht;
+QMP6988 qmp;
+bool shtSensorAvailable;
+bool qmpSensorAvailable;
+
+String lastAlertTime;
+float lastAlertThresh;
+float lastAlertTemp;
 
 extern bool wifiTimeout;
 bool httpServerStarted = false;
@@ -172,6 +184,9 @@ void setup()
 
   // Retrieve last shutdown time information
   retrieveLastShutdownInfo();
+
+  // Retrieve info on last over-temperature alert
+  retrieveLastAlertInfo();
 
   // Set Wi-Fi hostname. This name shows up, for example, on the list of connected devices on the router settings page
   WiFi.setHostname(PEPLINK_FOB_NAME);

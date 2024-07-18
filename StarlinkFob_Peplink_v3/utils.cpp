@@ -179,6 +179,30 @@ void retrieveLastShutdownInfo()
     }
     timePrefs.end();
 }
+void retrieveLastAlertInfo()
+{
+    Preferences alertPrefs;
+    if (alertPrefs.begin(TEMPERATURE_ALERT_NAMESPACE))
+    {
+        size_t timestampSize = alertPrefs.getBytesLength(TEMPERATURE_ALERT_NAMESPACE);
+
+        if (timestampSize && (timestampSize == sizeof(AlertTimestamp_t)))
+        {
+            uint8_t timestampBuffer[sizeof(AlertTimestamp_t)];
+            alertPrefs.getBytes(TEMPERATURE_ALERT_NAMESPACE, timestampBuffer,  sizeof(AlertTimestamp_t));
+            alertPrefs.end();
+            AlertTimestamp_t *timestamp = (AlertTimestamp_t*)timestampBuffer;
+            lastAlertTime = timestamp->lastAlertTime;
+            lastAlertTemp = timestamp->lastAlertTemp;
+            lastAlertThresh = timestamp->lastAlertThresh;
+            Serial.println("Got last temp alert details:");
+            Serial.printf("\tTime: %s\n", timestamp->lastAlertTime);
+            Serial.printf("\tTemp: %fF\n",  timestamp->lastAlertTemp);
+            Serial.printf("\tThresh: %fF\n",  timestamp->lastAlertThresh);
+        }
+    }
+    alertPrefs.end();
+}
 
 void setTimezone(const char* tzone)
 {
