@@ -55,6 +55,10 @@ PeplinkAPI_ClientScope_t routerClientScope;
 long wifiTimeoutMs;
 long wifiTimestamp;
 
+String lastShutdownTime;
+String lastShutdownTimezone;
+uint64_t lastShutdownRuntime;
+
 PeplinkRouter router;
 Preferences routerPrefs;
 Preferences cookiePrefs;
@@ -165,6 +169,9 @@ void setup()
 
   // Retrieve user-defined credentials from NVS
   restorePreferences();
+
+  // Retrieve last shutdown time information
+  retrieveLastShutdownInfo();
 
   // Set Wi-Fi hostname. This name shows up, for example, on the list of connected devices on the router settings page
   WiFi.setHostname(PEPLINK_FOB_NAME);

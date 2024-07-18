@@ -56,6 +56,13 @@ struct PingTarget {
   bool pingOK;            // result of ping
 };
 
+typedef struct 
+{
+  char lastShutdownTime[20];
+  char lastShutdownTimezone[20];
+  uint64_t lastShutdownRuntime;
+} ShutdownTimestamp_t;
+
 /// @brief Handle of the local HTTP server
 extern WebServer httpServer;
 
@@ -81,6 +88,10 @@ extern PeplinkAPI_ClientScope_t routerClientScope;
 extern long wifiTimeoutMs;
 extern long wifiTimestamp;
 
+extern String lastShutdownTime;
+extern String lastShutdownTimezone;
+extern uint64_t lastShutdownRuntime;
+
 extern Preferences cookiePrefs;
 extern Preferences routerPrefs;
 extern PeplinkRouter router;
@@ -103,6 +114,8 @@ void retrieveStoredCredentials();
 
 /// @brief Copy user-defined credentials from non-volatile storage to their corresponding runtime variables
 void restorePreferences();
+
+void retrieveLastShutdownInfo();
 
 /// @brief Start the local webserver
 void startHttpServer();

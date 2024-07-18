@@ -61,6 +61,9 @@
 /// @brief Namespace where user-defined credentials are stored in NVS
 #define PREFERENCES_NAMESPACE   "settings"
 
+/// @brief Namespace where timestamps are stored in NVS
+#define TIMESTAMP_NAMESPACE   "timestamps"
+
 /// @brief Define NTP servers for time sync
 #define NTP_SERVER1             "pool.ntp.org"
 #define NTP_SERVER2             "time.nist.gov"

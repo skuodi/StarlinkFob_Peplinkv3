@@ -3,6 +3,7 @@
  * @brief Contains common user definitions and convenience fucntions
  */
 
+#include "stdint.h"
 #include "M5StickCPlus2.h"
 #include <Preferences.h>
 #include "config.h"
@@ -152,6 +153,31 @@ void restorePreferences()
     }
     else
         savePreferences();
+}
+
+void retrieveLastShutdownInfo()
+{
+    Preferences timePrefs;
+    if (timePrefs.begin(TIMESTAMP_NAMESPACE))
+    {
+        size_t timestampSize = timePrefs.getBytesLength(TIMESTAMP_NAMESPACE);
+
+        if (timestampSize && (timestampSize == sizeof(ShutdownTimestamp_t)))
+        {
+            uint8_t timestampBuffer[sizeof(ShutdownTimestamp_t)];
+            timePrefs.getBytes(TIMESTAMP_NAMESPACE, timestampBuffer,  sizeof(ShutdownTimestamp_t));
+            timePrefs.end();
+            ShutdownTimestamp_t *timestamp = (ShutdownTimestamp_t*)timestampBuffer;
+            lastShutdownRuntime = timestamp->lastShutdownRuntime;
+            lastShutdownTime = timestamp->lastShutdownTime;
+            lastShutdownTimezone = timestamp->lastShutdownTimezone;
+            Serial.println("Got shutdown details:");
+            Serial.printf("\tRuntime: %"PRId64"\n", timestamp->lastShutdownRuntime);
+            Serial.printf("\tTime: %s\n", timestamp->lastShutdownTime);
+            Serial.printf("\tTimezone: %s\n",  timestamp->lastShutdownTimezone);
+        }
+    }
+    timePrefs.end();
 }
 
 void setTimezone(const char* tzone)

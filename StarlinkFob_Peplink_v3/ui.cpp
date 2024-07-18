@@ -384,9 +384,19 @@ void lcdPrintTime(void *arg = NULL)
   Serial.printf("%02d:%02d:%02dH\n%02d/%02d/%04d\n",
                 dt.time.hours, dt.time.minutes, dt.time.seconds,
                 dt.date.date, dt.date.month, dt.date.year);
-  M5.Lcd.printf("%02d:%02d:%02dH\n%02d/%02d/%04d\n",
+  M5.Lcd.printf("Time:%02d:%02d:%02dH\nDate:%02d/%02d/%04d\n",
                 dt.time.hours, dt.time.minutes, dt.time.seconds,
                 dt.date.date, dt.date.month, dt.date.year);
+
+  if(lastShutdownTime.length())  
+    M5.Lcd.printf("Last PWR:%s\n", lastShutdownTime.c_str());
+  else
+    M5.Lcd.println("Last PWR:Unknown");
+
+  if (lastShutdownRuntime)
+    M5.Lcd.printf("Last Run:%04d:%02d", (lastShutdownRuntime/1000)/3600, ((lastShutdownRuntime/1000) % 3600)/60);
+  else
+    M5.Lcd.println("Last Run:Unknown");
 }
 
 /// @brief Get the status of WAN connections
@@ -1093,7 +1103,8 @@ void uiMenuInit(void)
     else
     {
       Serial.println("Router connected!");
-      goToRouterWANListPage();
+      if(menu.currentPageId() == pingTargetsPageId)
+        goToRouterWANListPage();
     }
   }
   return;
@@ -1311,7 +1322,7 @@ void countdownTask(void *arg)
     delay(10);
 
   if (countdownType == UI_COUNTDOWN_TYPE_WIFI)
-    M5.Lcd.printf("\nSSID: %s\n\n", WiFi.SSID().c_str());
+    M5.Lcd.printf("SSID: %s\n\n", WiFi.SSID().c_str());
 
   const int cursorX = M5.Lcd.getCursorX();
   const int cursorY = M5.Lcd.getCursorY();
@@ -1366,7 +1377,31 @@ void countdownTask(void *arg)
       goToWiFiPromptPage();
     }
     else if (countdownType == UI_COUNTDOWN_TYPE_SHUTDOWN)
+    {
+      ShutdownTimestamp_t sTime;
+      auto dt = M5.Rtc.getDateTime();
+      snprintf(sTime.lastShutdownTime, sizeof(sTime.lastShutdownTime), "%02d/%02d/%04d %02d:%02dH",
+                dt.date.date, dt.date.month, dt.date.year,
+                dt.time.hours, dt.time.minutes);
+      snprintf(sTime.lastShutdownTimezone, sizeof(sTime.lastShutdownTimezone), "%s", TIMEZONE);
+      sTime.lastShutdownRuntime = millis();
+
+      Serial.println("Saving shutdown details:");
+      Serial.printf("\tRuntime: %"PRId64"\n", sTime.lastShutdownRuntime);
+      Serial.printf("\tTime: %s\n", sTime.lastShutdownTime);
+      Serial.printf("\tTimezone: %s\n",  sTime.lastShutdownTimezone);
+
+      Preferences timePrefs;
+      if (timePrefs.begin(TIMESTAMP_NAMESPACE, false))
+      {
+          timePrefs.clear();
+          if(timePrefs.putBytes(TIMESTAMP_NAMESPACE, &sTime, sizeof(sTime)))
+            Serial.println("Saved timestamps to storage...shutting down now!");
+      }
+      timePrefs.end();
+      delay(100);
       M5.Power.powerOff();
+    }
     else
       ESP.restart();
   }
