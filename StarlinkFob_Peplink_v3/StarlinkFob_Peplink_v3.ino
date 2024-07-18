@@ -60,6 +60,7 @@ Preferences routerPrefs;
 Preferences cookiePrefs;
 
 extern bool wifiTimeout;
+bool httpServerStarted = false;
 void startWiFiConnectCountdown(void *arg);
 
 #define MIN(x, y) (x < y) ? x : y
@@ -180,8 +181,12 @@ void setup()
     delay(500);
   }
   Serial.println();
-  Serial.println("Starting HTTP Server");
-  startHttpServer();
+  if(!httpServerStarted)
+  {
+    httpServerStarted = true;
+    Serial.println("Starting HTTP Server");
+    startHttpServer();
+  }
 
   // Set the function to be called when network time is successfully synced
   sntp_set_time_sync_notification_cb([](struct timeval *t)

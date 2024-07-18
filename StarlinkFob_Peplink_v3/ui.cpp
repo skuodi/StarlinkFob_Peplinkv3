@@ -613,6 +613,12 @@ void startWiFiAP(void *arg)
     wifiTimeout = true;
   }
   delay(1000);
+  if(!httpServerStarted)
+  {
+    httpServerStarted = true;
+    Serial.println("Starting HTTP Server");
+    startHttpServer();
+  }
   goToWiFiPage();
 }
 
@@ -1374,7 +1380,13 @@ void countdownTask(void *arg)
         goToWiFiPromptPage();
       }
       else if (booting)
-      {
+      {  
+        if(!httpServerStarted)
+        {
+          httpServerStarted = true;
+          Serial.println("Starting HTTP Server");
+          startHttpServer();
+        }
         goToPingTargetsPage();
         xTaskNotify(wifiWatchTaskHandle, 1, eSetValueWithOverwrite);
       }

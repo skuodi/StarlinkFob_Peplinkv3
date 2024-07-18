@@ -85,7 +85,7 @@ extern Preferences cookiePrefs;
 extern Preferences routerPrefs;
 extern PeplinkRouter router;
 
-extern const char *timezone;
+extern bool httpServerStarted;
 
 /// @brief Overwrite user credentials in runtime variables with their hard-coded default values 
 void resetPreferences();
