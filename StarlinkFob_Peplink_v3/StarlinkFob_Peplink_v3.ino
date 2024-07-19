@@ -11,6 +11,7 @@
 #include "secrets.h"
 #include "config.h"
 #include "utils.h"
+#include "logo.h"
 
 #include "Minu/minu.hpp"
 #include "ui.h"
@@ -239,26 +240,35 @@ void showSplashScreen()
 {
   Serial.println("SplashScreen");
   Serial.println("GOBOX PRO");
-  M5.Lcd.fillScreen(GREEN);
+  M5.Lcd.fillScreen(LOGO_GREEN);
   M5.Lcd.setTextSize(5);
   M5.Lcd.setCursor(0, 0);
-  M5.Lcd.setTextColor(BLACK, GREEN);
+  M5.Lcd.setTextColor(BLACK, LOGO_GREEN);
   M5.Lcd.println();
   M5.Lcd.println("  GOBOX");
   M5.Lcd.println("   PRO  ");
   delay(6000);
+  #ifdef USE_LOGO
+  M5.Lcd.fillScreen(WHITE);
+  M5.Lcd.drawBitmap(0, 5, 240, 93, logo, 0);
+  M5.Lcd.setTextSize(3);
+  M5.Lcd.setTextColor(LOGO_GREEN, WHITE);
+  M5.Lcd.setCursor(0, 108);
+  M5.Lcd.println(" 469-257-1111 ");
+  #else
   M5.Lcd.fillScreen(BLACK);
   M5.Lcd.setTextSize(3);
   M5.Lcd.setCursor(0, 0);
-  M5.Lcd.setTextColor(BLACK, GREEN);
+  M5.Lcd.setTextColor(BLACK, LOGO_GREEN);
   M5.Lcd.print("1");
-  M5.Lcd.setTextColor(GREEN, BLACK);
+  M5.Lcd.setTextColor(LOGO_GREEN, BLACK);
   M5.Lcd.print("SIMPLE\n");
   M5.Lcd.setTextColor(ORANGE, BLACK);
   M5.Lcd.print(" CONNECT\n");
   M5.Lcd.setTextColor(WHITE, BLACK);
   M5.Lcd.print("\n");
-  M5.Lcd.println("469-257-1111 ");
+  #endif
+  M5.Lcd.println(" 469-257-1111 ");
   delay(5000);
   M5.Lcd.clear();
   M5.Lcd.setCursor(0,0);

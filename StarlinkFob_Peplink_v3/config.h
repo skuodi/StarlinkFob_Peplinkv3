@@ -21,6 +21,9 @@
 // Uncomment the following line to enable beeping on every button press
 // #define UI_BEEP
 
+// Uncomment to use Logo instead of text on splash screen
+#define USE_LOGO
+
 /// @brief Name used as the Wi-Fi hostname and device name
 #define PEPLINK_FOB_NAME        "PeplinkFob"
 
