@@ -16,7 +16,7 @@
   - [x] [6. Home page rendering issue](#6-home-page-rendering-issue)
   - [x] [7. HTTP server early startup](#7-http-server-early-startup)
   - [8. Startup sequence](#8-startup-sequence)
-  - [9. New splash screen sequence](#9-new-splash-screen-sequence)
+  - [x] [9. New splash screen sequence](#9-new-splash-screen-sequence)
   - [x] [10. Update time screen](#10-update-time-screen)
   - [x] [11. Add sensors screen](#11-add-sensors-screen)
   - [12. Changes to Wi-Fi post-connection sequence](#12-changes-to-wi-fi-post-connection-sequence)
@@ -46,7 +46,7 @@ Please add lots of comments in the code, I would like to learn from this project
 Implement debug mode that outputs a lot more output to serial, and also suppresses a lot when it's off.
 ```
 
-- The following flags can be defined at the top of `config.h` and control the printing of debug logs for different translation units:
+- The following flags can be defined at the top of [`config.h`](StarlinkFob_Peplink_v3/config.h#L14) and control the printing of debug logs for different translation units:
   - `ENABLE_VERBOSE_DEBUG_LOG` - enables all debug logs
   - `PEPLINK_DEBUG_LOG` - enables debug printing for Peplink API functions
   - `UI_DEBUG_LOG` - enables debug logs for UI functions
@@ -63,7 +63,7 @@ Separately add a readme that has a simple sequence of startup/shutdown/error con
 Also a readme document on how to add new menus.
 ```
 
-- Available in the [*Usage* section of the Minu library README]().
+- Available in the [*Usage* section of the Minu library README](StarlinkFob_Peplink_v3/Minu/README.md#usage).
 
 ### 5. Primary and secondary Wi-Fi
 ```
@@ -152,6 +152,40 @@ https://www.hackster.io/tommyho/m5gfx-media-player-jpg-png-bmp-gif-ab76a9
 Let us know how to convert/upload logo.
 ```
 
+In [`config.h`](StarlinkFob_Peplink_v3/config.h#L25), the `USE_LOGO` flag enables the logo to be used in the splash screen. The actual logo image data is defined in [`logo.h`](StarlinkFob_Peplink_v3/logo.h#L8).
+
+To add/generate new image data from an image file, the following tools will be necessary:
+  - [GIMP](https://www.gimp.org/downloads/)
+  - [File to hex converter](https://tomeko.net/online_tools/file_to_hex.php)
+  
+  1. Open GIMP and drag/drop the source image into it.
+  2. Right click the image, 
+   - Select `Image > Scale Image` and resize it as necessary
+   - Select `Image > Transform > Flip Vertically`. This seems to be necessary to orient the image correctly.
+  3. Use `Ctrl-Shift-E` to open the export menu
+   - Choose a filename and location to export the file to ensuring the file has a `.bmp` extension.
+   - Under export settings, choose `Advanced Options` and select `R5 G6 B5` then export
+
+![](bmp_export_settings.png)
+
+  4. Open the [file to hexadecimal converter](https://tomeko.net/online_tools/file_to_hex.php) and select the created file
+  5. Copy the generated values into a text editor and format it as an array as follows
+```c
+const uint8_t img_data[] = {
+	// Generated data here
+};
+```
+  6. To display the image call the drawBitmap function of the display
+```c
+  M5.Lcd.drawBitmap(0,          // Image top left x-coordinate
+                    5,          // Image top left y-coordinate
+                    240,        // Image width
+                    93,         // Image height
+                    img_data,   // Array of image data
+                    0);         // Background colour
+```
+
+
 ### 10. Update time screen
 ```
 #3
@@ -166,6 +200,9 @@ Time Screen (Display for 2 secs)
 -Last runtime  HHHH:MM (Length of time unit was powered on)
 ```
 
+- Added last shutdown timestamps.
+
+
 ### 11. Add sensors screen
 ```
 #4
@@ -176,8 +213,9 @@ Temperature And Humidity screen (Display for 2 secs)
 
 -Add Temperature And Humidity menu entry from homepage, to screen same as boot menu when triggered with exit option
 
-
 ```
+
+Added sensor readings page.
 
 ### 12. Changes to Wi-Fi post-connection sequence
 ```
@@ -212,6 +250,8 @@ Beep every 1sec when temperature exceeds 120F (Make value configurable temperatu
 -If a new date/time exceeds 120F, then it should overwrite the last date/time/max temperature.
 Log to serial for testing as well.
 ```
+
+- Added temperature alarm logging and log retrieval on boot
 
 ### 15. Ping screen loop over hosts
 ```
