@@ -43,13 +43,6 @@ typedef struct
   int channel;
 } UiWiFiScannedNetwork;
 
-TaskHandle_t countdownTaskHandle = NULL;
-TaskHandle_t screenWatchTaskHandle = NULL;
-TaskHandle_t screenUpdateTaskHandle = NULL;
-TaskHandle_t buttonWatchTaskHandle = NULL;
-TaskHandle_t dataUpdateTaskHandle = NULL;
-TaskHandle_t wifiWatchTaskHandle = NULL;
-
 size_t homePageId;
 size_t wifiPageId;
 size_t wifiPromptPageId;
@@ -74,20 +67,6 @@ size_t lastVisitedPageId;
 static size_t wifiStatusItem;
 static ssize_t homepageWifiItem;
 
-static bool booting = true;           // Set at boot to initiate the automated changing of pages after Wi-Fi connects
-static bool primarySsidValid = true;  // Whether the or the secondary SSID should be used for Wi-Fi STA connection
-bool wifiTimeout = false;             // Indicates if Wi-Fi has timed out waiting for STA connection
-
-long lastButtonADownTime = 0;
-long lastButtonBDownTime = 0;
-long lastButtonCDownTime = 0;
-long currentTime = 0;
-bool longPressA;
-bool longPressB;
-bool longPressC;
-bool shortPressA;
-bool shortPressB;
-
 static String tempSSID;
 static String lastSelectedWAN;
 static size_t lastSelectedSim;
@@ -101,93 +80,93 @@ void wifiWatchTask(void* arg);
 
 void goToFobInfoPage(void *arg = NULL)
 {
-  menu.goToPage(fobInfoPageId);
+  fob.menu.goToPage(fobInfoPageId);
 }
 
 void goToHomePage(void *arg = NULL)
 {
-  booting = false;
-  menu.goToPage(homePageId);
+  fob.booting = false;
+  fob.menu.goToPage(homePageId);
 }
 
 void goToWiFiPage(void *arg = NULL)
 {
-  menu.goToPage(wifiPageId);
+  fob.menu.goToPage(wifiPageId);
 }
 
 void goToTimePage(void *arg = NULL)
 {
-  menu.goToPage(timePageId);
+  fob.menu.goToPage(timePageId);
 }
 
 void goToSensorsPage(void *arg = NULL)
 {
-  menu.goToPage(sensorsPageId);
+  fob.menu.goToPage(sensorsPageId);
 }
 
 void goToWiFiPromptPage(void *arg = NULL)
 {
-  menu.goToPage(wifiPromptPageId);
+  fob.menu.goToPage(wifiPromptPageId);
 }
 
 void goToScanResultPage(void *arg = NULL)
 {
-  menu.goToPage(scanResultPageId);
+  fob.menu.goToPage(scanResultPageId);
 }
 
 void goToCountdownPage(void *arg = NULL)
 {
-  menu.goToPage(countdownPageId);
+  fob.menu.goToPage(countdownPageId);
 }
 
 void goToRouterPage(void *arg = NULL)
 {
-  menu.goToPage(routerPageId);
+  fob.menu.goToPage(routerPageId);
 }
 
 void goToRouterInfoPage(void *arg = NULL)
 {
-  menu.goToPage(routerInfoPageId);
+  fob.menu.goToPage(routerInfoPageId);
 }
 
 void goToRouterLocationPage(void *arg = NULL)
 {
-  menu.goToPage(routerLocationPageId);
+  fob.menu.goToPage(routerLocationPageId);
 }
 
 void goToRouterWANListPage(void *arg = NULL)
 {
-  menu.goToPage(routerWANListPageId);
+  fob.menu.goToPage(routerWANListPageId);
 }
 
 void goToRouterWANInfoPage(void *arg = NULL)
 {
-  menu.goToPage(routerWANInfoPageId);
+  fob.menu.goToPage(routerWANInfoPageId);
 }
 
 void goToWANSummaryPage(void* arg = NULL)
 {
-  menu.goToPage(routerWANSummaryPageId);
+  fob.menu.goToPage(routerWANSummaryPageId);
 }
 
 void goToPingTargetsPage(void *arg = NULL)
 {
-  menu.goToPage(pingTargetsPageId);
+  fob.menu.goToPage(pingTargetsPageId);
 }
 
 void goToFactoryResetPage(void* arg = NULL)
 {
-  menu.goToPage(factoryResetPageId);
+  fob.menu.goToPage(factoryResetPageId);
 }
 
 void goToSimListPage(void* arg = NULL)
 {
-  menu.goToPage(simListPageId);
+  fob.menu.goToPage(simListPageId);
 }
 
 void goToSimInfoPage(void* arg = NULL)
 {
-  menu.goToPage(simInfoPageId);
+  fob.menu.goToPage(simInfoPageId);
 }
 
 /// @brief Generic function to be called just after the current active page changes
@@ -252,7 +231,7 @@ void updateWiFiItem(void *arg)
 void lcdPrintWiFiStatus(void *page)
 {
   if (page)
-    if (menu.currentPageId() == wifiPageId && (*(MinuPage *)page).highlightedIndex() != wifiStatusItem)
+    if (fob.menu.currentPageId() == wifiPageId && (*(MinuPage *)page).highlightedIndex() != wifiStatusItem)
       return;
 
   M5.Lcd.setTextColor(MINU_FOREGROUND_COLOUR_DEFAULT, MINU_BACKGROUND_COLOUR_DEFAULT);
@@ -293,7 +272,7 @@ void lcdPrintRouterInfo(void *arg = NULL)
 
   M5.Lcd.println("Fetching...");
 
-  if (!router.isAvailable() || !router.getInfo())
+  if (!fob.routers.router.isAvailable() || !fob.routers.router.getInfo())
   {
     M5.Lcd.setCursor(cursorX, cursorY);
     M5.Lcd.setTextColor(RED, BLACK);
@@ -302,12 +281,12 @@ void lcdPrintRouterInfo(void *arg = NULL)
     return;
   }
   M5.Lcd.setCursor(cursorX, cursorY);
-  M5.Lcd.printf("Name  :%s\n", router.info().name.c_str());
-  M5.Lcd.printf("Uptime:%ld\n", router.info().uptime);
-  M5.Lcd.printf("Serial:%s\n", router.info().serial.c_str());
-  M5.Lcd.printf("Fw Ver:%s\n", router.info().fwVersion.c_str());
-  M5.Lcd.printf("P Code:%s\n", router.info().productCode.c_str());
-  M5.Lcd.printf("hw Rev:%s\n", router.info().hardwareRev.c_str());
+  M5.Lcd.printf("Name  :%s\n", fob.routers.router.info().name.c_str());
+  M5.Lcd.printf("Uptime:%ld\n", fob.routers.router.info().uptime);
+  M5.Lcd.printf("Serial:%s\n", fob.routers.router.info().serial.c_str());
+  M5.Lcd.printf("Fw Ver:%s\n", fob.routers.router.info().fwVersion.c_str());
+  M5.Lcd.printf("P Code:%s\n", fob.routers.router.info().productCode.c_str());
+  M5.Lcd.printf("hw Rev:%s\n", fob.routers.router.info().hardwareRev.c_str());
 }
 
 /// @brief Fetch and print the router location information
@@ -318,7 +297,7 @@ void lcdPrintRouterLocation(void *arg = NULL)
 
   M5.Lcd.println("Fetching...");
 
-  if (!router.isAvailable() || !router.getLocation())
+  if (!fob.routers.router.isAvailable() || !fob.routers.router.getLocation())
   {
     M5.Lcd.setCursor(cursorX, cursorY);
     M5.Lcd.setTextColor(RED, BLACK);
@@ -328,15 +307,15 @@ void lcdPrintRouterLocation(void *arg = NULL)
   }
   
   M5.Lcd.setCursor(cursorX, cursorY);
-  M5.Lcd.printf("Longitude:%s\n", router.location().longitude.c_str());
-  M5.Lcd.printf("Latitude :%s\n", router.location().latitude.c_str());
-  M5.Lcd.printf("Altitude :%s\n", router.location().altitude.c_str());
+  M5.Lcd.printf("Longitude:%s\n", fob.routers.router.location().longitude.c_str());
+  M5.Lcd.printf("Latitude :%s\n", fob.routers.router.location().latitude.c_str());
+  M5.Lcd.printf("Altitude :%s\n", fob.routers.router.location().altitude.c_str());
 }
 
 /// @brief Fetch and print the selected WAN information
 void lcdPrintRouterWANInfo(void *arg = NULL)
 {
-  if(!router.getWanStatus())
+  if(!fob.routers.router.getWanStatus())
   {
     M5.Lcd.setTextColor(RED, BLACK);
     M5.Lcd.println("Unavailable!");
@@ -344,7 +323,7 @@ void lcdPrintRouterWANInfo(void *arg = NULL)
     return;
   }
 
-  std::vector<PeplinkAPI_WAN *> wanList = router.wanStatus();
+  std::vector<PeplinkAPI_WAN *> wanList = fob.routers.router.wanStatus();
   if (!wanList.size())
   {
     M5.Lcd.setTextColor(RED, BLACK);
@@ -395,22 +374,22 @@ void lcdPrintTime(void *arg = NULL)
                 dt.time.hours, dt.time.minutes, dt.time.seconds,
                 dt.date.date, dt.date.month, dt.date.year);
 
-  if(lastShutdownTime.length())  
-    M5.Lcd.printf("Last PWR:%s\n", lastShutdownTime.c_str());
+  if(fob.timestamps.lastShutdownTime.length())  
+    M5.Lcd.printf("Last PWR:%s\n", fob.timestamps.lastShutdownTime.c_str());
   else
     M5.Lcd.println("Last PWR:Unknown");
 
-  if (lastShutdownRuntime)
-    M5.Lcd.printf("Last Run:%04d:%02d", (lastShutdownRuntime/1000)/3600, ((lastShutdownRuntime/1000) % 3600)/60);
+  if (fob.timestamps.lastShutdownRuntime)
+    M5.Lcd.printf("Last Run:%04d:%02d", (fob.timestamps.lastShutdownRuntime/1000)/3600, ((fob.timestamps.lastShutdownRuntime/1000) % 3600)/60);
   else
     M5.Lcd.println("Last Run:Unknown");
 }
 
 void lcdPrintSensors(void* arg = NULL)
 {
-  if(shtSensorAvailable && sht.update())
+  if(fob.sensors.shtAvailable && fob.sensors.sht.update())
   {
-    if(sht.fTemp > TEMPERATURE_ALERT_THRESH_F)
+    if(fob.sensors.sht.fTemp > TEMPERATURE_ALERT_THRESH_F)
     {
       M5.Lcd.fillScreen(RED);
       M5.Lcd.setCursor(0, 0);
@@ -419,20 +398,20 @@ void lcdPrintSensors(void* arg = NULL)
       M5.Lcd.println("__OVER TEMPERATURE__\n");
       M5.Lcd.printf("  Threshold: %dF\n\n", TEMPERATURE_ALERT_THRESH_F);
       M5.Lcd.setTextSize(5);
-      M5.Lcd.printf(" %.2fF\n\n", sht.fTemp);
+      M5.Lcd.printf(" %.2fF\n\n", fob.sensors.sht.fTemp);
       M5.Lcd.setTextSize(TEXT_SIZE_DEFAULT);
       M5.Lcd.setTextColor(WHITE, BLACK);
       
       AlertTimestamp_t aTime;
       auto dt = M5.Rtc.getDateTime();
-      snprintf(aTime.lastAlertTime, sizeof(aTime.lastAlertTime), "%02d/%02d/%04d %02d:%02dH",
+      snprintf(aTime.lastTempAlertTime, sizeof(aTime.lastTempAlertTime), "%02d/%02d/%04d %02d:%02dH",
                 dt.date.date, dt.date.month, dt.date.year,
                 dt.time.hours, dt.time.minutes);
-      aTime.lastAlertTemp = sht.fTemp;
-      aTime.lastAlertThresh = TEMPERATURE_ALERT_THRESH_F;
+      aTime.lastTempAlertTemp = fob.sensors.sht.fTemp;
+      aTime.lastTempAlertThresh = TEMPERATURE_ALERT_THRESH_F;
 
       Serial.printf("Over-temperature alert\n\tThreshold: %dF\n\tTemperature: %fF\n\tTimestamp: %s\n",
-                    TEMPERATURE_ALERT_THRESH_F, aTime.lastAlertTemp, aTime.lastAlertTime);
+                    TEMPERATURE_ALERT_THRESH_F, aTime.lastTempAlertTemp, aTime.lastTempAlertTime);
 
       Preferences alertPrefs;
       if (alertPrefs.begin(TEMPERATURE_ALERT_NAMESPACE, false))
@@ -448,16 +427,16 @@ void lcdPrintSensors(void* arg = NULL)
     M5.Lcd.fillScreen(BLACK);
     M5.Lcd.setCursor(0, 0);
     M5.Lcd.println("______SENSORS_______\n");
-    M5.Lcd.printf("%%RH :%.2f%% @ %.2fF\n", sht.humidity, sht.fTemp);
+    M5.Lcd.printf("%%RH :%.2f%% @ %.2fF\n", fob.sensors.sht.humidity, fob.sensors.sht.fTemp);
   }
   else
     M5.Lcd.println("\nSHT sensor unavailable!");
 
-  if(qmpSensorAvailable && qmp.update())
+  if(fob.sensors.qmpAvailable && fob.sensors.qmp.update())
   {
-    M5.Lcd.printf("Temp:%.4f C\n", qmp.cTemp);
-    M5.Lcd.printf("Pres:%.4f Pa\n", qmp.pressure);
-    M5.Lcd.printf("Alt :%.4f m\n", qmp.altitude);
+    M5.Lcd.printf("Temp:%.4f C\n", fob.sensors.qmp.cTemp);
+    M5.Lcd.printf("Pres:%.4f Pa\n", fob.sensors.qmp.pressure);
+    M5.Lcd.printf("Alt :%.4f m\n", fob.sensors.qmp.altitude);
   }
   else
     M5.Lcd.println("QMP sensor unavailable!\n");
@@ -473,7 +452,7 @@ void printRouterWanStatus(void* arg = NULL)
   const int cursorX = M5.Lcd.getCursorX();
   const int cursorY = M5.Lcd.getCursorY();
 
-  if (!router.isAvailable() || !router.getWanStatus())
+  if (!fob.routers.router.isAvailable() || !fob.routers.router.getWanStatus())
   {
     M5.Lcd.setCursor(cursorX, cursorY);
     M5.Lcd.setTextColor(RED, BLACK);
@@ -485,7 +464,7 @@ void printRouterWanStatus(void* arg = NULL)
   {
     M5.Lcd.clear();
     M5.Lcd.setCursor(cursorX, cursorY);
-    std::vector<PeplinkAPI_WAN *> wanList = router.wanStatus();
+    std::vector<PeplinkAPI_WAN *> wanList = fob.routers.router.wanStatus();
     Serial.println(String(wanList.size()) + " elements:");
     for (PeplinkAPI_WAN *wan : wanList)
     {
@@ -578,34 +557,34 @@ void lcdPrintFobInfo(void *arg = NULL)
 /// @brief Stop the task that periodically performs HTTP requests
 void stopDataUpdate(void *arg = NULL)
 {
-  if (dataUpdateTaskHandle)
+  if (fob.tasks.dataUpdate)
   {
-    vTaskDelete(dataUpdateTaskHandle);
-    dataUpdateTaskHandle = NULL;
+    vTaskDelete(fob.tasks.dataUpdate);
+    fob.tasks.dataUpdate = NULL;
   }
 }
 
 /// @brief Check whether ping targets can be reached
 void updatePingTargetsStatus(void *arg = NULL)
 {
-  size_t targetCount = pingTargets.size();
+  size_t targetCount = fob.pingTargets.size();
   Serial.printf("Pinging %d targets...\n", targetCount);
 
   for (size_t i = 0; i < targetCount; ++i)
   {
-    if (pingTargets[i].useIP)
-      pingTargets[i].pingOK = Ping.ping(pingTargets[i].pingIP, 5);
+    if (fob.pingTargets[i].useIP)
+      fob.pingTargets[i].pingOK = Ping.ping(fob.pingTargets[i].pingIP, 5);
     else
-      pingTargets[i].pingOK = Ping.ping(pingTargets[i].fqn.c_str(), 5);
-    pingTargets[i].pinged = true;
+      fob.pingTargets[i].pingOK = Ping.ping(fob.pingTargets[i].fqn.c_str(), 5);
+    fob.pingTargets[i].pinged = true;
 
-    if (pingTargets[i].pingOK)
-      menu.pages()[pingTargetsPageId]->items()[i].setAuxTextBackground(GREEN);
+    if (fob.pingTargets[i].pingOK)
+      fob.menu.pages()[pingTargetsPageId]->items()[i].setAuxTextBackground(GREEN);
     else
-      menu.pages()[pingTargetsPageId]->items()[i].setAuxTextBackground(RED);
-    Serial.printf("Target %d(%s) -> ping %s\n", i, pingTargets[i].pingIP.toString().c_str(), (pingTargets[i].pingOK) ? "OK" : "FAIL");
-    if (screenUpdateTaskHandle)
-      xTaskNotify(screenUpdateTaskHandle, 1, eSetValueWithOverwrite);
+      fob.menu.pages()[pingTargetsPageId]->items()[i].setAuxTextBackground(RED);
+    Serial.printf("Target %d(%s) -> ping %s\n", i, fob.pingTargets[i].pingIP.toString().c_str(), (fob.pingTargets[i].pingOK) ? "OK" : "FAIL");
+    if (fob.tasks.screenUpdate)
+      xTaskNotify(fob.tasks.screenUpdate, 1, eSetValueWithOverwrite);
   }
 }
 
@@ -613,36 +592,36 @@ void updatePingTargetsStatus(void *arg = NULL)
 void startDataUpdate(void *arg = NULL)
 {
   UiUpdateType ut;
-  if (menu.currentPageId() == timePageId)
+  if (fob.menu.currentPageId() == timePageId)
     ut = UI_UPDATE_TYPE_TIME;
-  else if (menu.currentPageId() == sensorsPageId)
+  else if (fob.menu.currentPageId() == sensorsPageId)
   {
     ut = UI_UPDATE_TYPE_SENSORS;
     
-    shtSensorAvailable = sht.begin(&Wire, SHT3X_I2C_ADDR, 0, 26, 400000U);
-    qmpSensorAvailable = qmp.begin(&Wire, QMP6988_SLAVE_ADDRESS_L, 0, 26, 400000U);
+    fob.sensors.shtAvailable = fob.sensors.sht.begin(&Wire, SHT3X_I2C_ADDR, 0, 26, 400000U);
+    fob.sensors.qmpAvailable = fob.sensors.qmp.begin(&Wire, QMP6988_SLAVE_ADDRESS_L, 0, 26, 400000U);
   }
-  else if (menu.currentPageId() == routerWANInfoPageId)
+  else if (fob.menu.currentPageId() == routerWANInfoPageId)
     ut = UI_UPDATE_TYPE_ROUTER_INFO;
-  else if (menu.currentPageId() == fobInfoPageId)
+  else if (fob.menu.currentPageId() == fobInfoPageId)
     ut = UI_UPDATE_TYPE_FOB_INFO;
-  else if (menu.currentPageId() == pingTargetsPageId)
+  else if (fob.menu.currentPageId() == pingTargetsPageId)
   {
     ut = UI_UPDATE_TYPE_PING;
-    for (auto item : menu.currentPage()->items())
+    for (auto item : fob.menu.currentPage()->items())
       item.setAuxTextBackground(MINU_BACKGROUND_COLOUR_DEFAULT);
-    menu.currentPage()->highlightItem(0);
-    if (screenUpdateTaskHandle)
-      xTaskNotify(screenUpdateTaskHandle, 1, eSetValueWithOverwrite);
+    fob.menu.currentPage()->highlightItem(0);
+    if (fob.tasks.screenUpdate)
+      xTaskNotify(fob.tasks.screenUpdate, 1, eSetValueWithOverwrite);
   }
-  else if(menu.currentPageId() == routerWANSummaryPageId)
+  else if(fob.menu.currentPageId() == routerWANSummaryPageId)
     ut = UI_UPDATE_TYPE_WAN;
   else
     return;
 
   // If the data update task is already running, delete and create it afresh
   stopDataUpdate();
-  xTaskCreatePinnedToCore(dataUpdateTask, "Data Update", 4096, (void *)ut, 2, &dataUpdateTaskHandle, ARDUINO_RUNNING_CORE);
+  xTaskCreatePinnedToCore(dataUpdateTask, "Data Update", 4096, (void *)ut, 2, &fob.tasks.dataUpdate, ARDUINO_RUNNING_CORE);
 }
 
 void startWiFiConnectCountdown(void *arg = NULL)
@@ -652,15 +631,15 @@ void startWiFiConnectCountdown(void *arg = NULL)
     goToHomePage();
     return;
   }
-  menu.pages()[countdownPageId]->setTitle("WAITING FOR WIFI");
+  fob.menu.pages()[countdownPageId]->setTitle("WAITING FOR WIFI");
 
-  wifiTimeout = false;
-  if (menu.currentPageId() != countdownPageId)
+  fob.wifi.timedOut = false;
+  if (fob.menu.currentPageId() != countdownPageId)
     goToCountdownPage();
 
-  if (countdownTaskHandle)
-    vTaskDelete(countdownTaskHandle);
-  xTaskCreatePinnedToCore(countdownTask, "WiFi Countdown", 2048, (void *)UI_COUNTDOWN_TYPE_WIFI, 2, &countdownTaskHandle, ARDUINO_RUNNING_CORE);
+  if (fob.tasks.countdown)
+    vTaskDelete(fob.tasks.countdown);
+  xTaskCreatePinnedToCore(countdownTask, "WiFi Countdown", 2048, (void *)UI_COUNTDOWN_TYPE_WIFI, 2, &fob.tasks.countdown, ARDUINO_RUNNING_CORE);
 
   if (WiFi.getMode() != WIFI_MODE_STA)
   {
@@ -668,15 +647,15 @@ void startWiFiConnectCountdown(void *arg = NULL)
     delay(100);
     WiFi.mode(WIFI_MODE_STA);
 
-    if (booting && !primarySsidValid)
+    if (fob.wifi.usePrimarySsid)
     {
-      Serial.printf("Connecting to Wi-Fi: SSID - '%s', Pass - '%s'\n", wifi2Ssid.c_str(), wifi2Password.c_str());
-      WiFi.begin(wifi2Ssid.c_str(), wifi2Password.c_str());
+      Serial.printf("Connecting to Wi-Fi: SSID - '%s', Pass - '%s'\n", fob.wifi.ssidStaPrimary.c_str(), fob.wifi.passwordStaPrimary.c_str());
+      WiFi.begin(fob.wifi.ssidStaPrimary.c_str(), fob.wifi.passwordStaPrimary.c_str());
     }
     else
     {
-      Serial.printf("Connecting to Wi-Fi: SSID - '%s', Pass - '%s'\n", wifi1Ssid.c_str(), wifi1Password.c_str());
-      WiFi.begin(wifi1Ssid.c_str(), wifi1Password.c_str());
+      Serial.printf("Connecting to Wi-Fi: SSID - '%s', Pass - '%s'\n", fob.wifi.ssidStaSecondary.c_str(), fob.wifi.passwordStaSecondary.c_str());
+      WiFi.begin(fob.wifi.ssidStaSecondary.c_str(), fob.wifi.passwordStaSecondary.c_str());
     }
   }
 }
@@ -689,14 +668,14 @@ void startWiFiAP(void *arg)
     WiFi.mode(WIFI_MODE_NULL);
     delay(100);
     WiFi.mode(WIFI_MODE_AP);
-    Serial.printf("Starting softAP...\tSSID:'%s'\tPassword:'%s'\n", wifiSsidSoftAp.c_str(), wifiPasswordSoftAp.c_str());
-    WiFi.softAP(wifiSsidSoftAp.c_str(), wifiPasswordSoftAp.c_str());
-    wifiTimeout = true;
+    Serial.printf("Starting softAP...\tSSID:'%s'\tPassword:'%s'\n", fob.wifi.ssidSoftAp.c_str(), fob.wifi.passwordSoftAp.c_str());
+    WiFi.softAP(fob.wifi.ssidSoftAp.c_str(), fob.wifi.passwordSoftAp.c_str());
+    fob.wifi.timedOut = true;
   }
   delay(1000);
-  if(!httpServerStarted)
+  if(!fob.servers.started)
   {
-    httpServerStarted = true;
+    fob.servers.started = true;
     Serial.println("Starting HTTP Server");
     startHttpServer();
   }
@@ -706,16 +685,16 @@ void startWiFiAP(void *arg)
 /// @brief Fetch and display list of available sim cards
 void showSimList(void *arg)
 {
-  while (!menu.rendered())
+  while (!fob.menu.rendered())
     delay(10);
   const int cursorX = M5.Lcd.getCursorX();
   const int cursorY = M5.Lcd.getCursorY();
   Serial.println("Fetching SIM list");
   
-  std::vector<PeplinkAPI_WAN *> wanList = router.wanStatus();
+  std::vector<PeplinkAPI_WAN *> wanList = fob.routers.router.wanStatus();
   if (!wanList.size())
   {
-    menu.pages()[routerWANListPageId]->addItem(goToRouterPage, NULL, NULL);
+    fob.menu.pages()[routerWANListPageId]->addItem(goToRouterPage, NULL, NULL);
     Serial.println("No WAN found!");
     M5.Lcd.setCursor(cursorX, cursorY);
     M5.Lcd.println("No WAN found!");
@@ -731,22 +710,22 @@ void showSimList(void *arg)
 
       for (auto it = 0; it < simList.size(); ++it)
       {
-          thisItem = menu.pages()[simListPageId]->addItem(goToSimInfoPage, String("SIM" + String(it)).c_str(), " ");
+          thisItem = fob.menu.pages()[simListPageId]->addItem(goToSimInfoPage, String("SIM" + String(it)).c_str(), " ");
         
         if(!simList[it].detected)
-            menu.pages()[simListPageId]->items()[thisItem].setAuxTextBackground(TFT_GREY);
+            fob.menu.pages()[simListPageId]->items()[thisItem].setAuxTextBackground(TFT_GREY);
         else if (simList[it].active)
-            menu.pages()[simListPageId]->items()[thisItem].setAuxTextBackground(GREEN);
+            fob.menu.pages()[simListPageId]->items()[thisItem].setAuxTextBackground(GREEN);
         else
-          menu.pages()[simListPageId]->items()[thisItem].setAuxTextBackground(RED);
+          fob.menu.pages()[simListPageId]->items()[thisItem].setAuxTextBackground(RED);
       }    
     }
 
   }
-  menu.pages()[simListPageId]->addItem(goToRouterPage, "<--", NULL);
-  menu.pages()[simListPageId]->highlightItem(0);
-  if (screenUpdateTaskHandle)
-    xTaskNotify(screenUpdateTaskHandle, 1, eSetValueWithOverwrite);
+  fob.menu.pages()[simListPageId]->addItem(goToRouterPage, "<--", NULL);
+  fob.menu.pages()[simListPageId]->highlightItem(0);
+  if (fob.tasks.screenUpdate)
+    xTaskNotify(fob.tasks.screenUpdate, 1, eSetValueWithOverwrite);
 }
 
 /// @brief Show information about a particular SIM card
@@ -756,7 +735,7 @@ void showSimInfo(void* arg = NULL)
   const int cursorY = M5.Lcd.getCursorY();
   Serial.println("Fetching SIM INFO");
   
-  std::vector<PeplinkAPI_WAN *> wanList = router.wanStatus();
+  std::vector<PeplinkAPI_WAN *> wanList = fob.routers.router.wanStatus();
   if (!wanList.size())
   {
     Serial.println("No WAN found!");
@@ -791,17 +770,17 @@ void showSimInfo(void* arg = NULL)
 /// @brief Create the list of available WANs
 void getWanList(void *arg)
 {
-  while (!menu.rendered())
+  while (!fob.menu.rendered())
     delay(10);
   const int cursorX = M5.Lcd.getCursorX();
   const int cursorY = M5.Lcd.getCursorY();
   Serial.println("Fetching WAN list");
   M5.Lcd.println("Fetching...");
 
-  if (!router.isAvailable() || !router.getWanStatus())
+  if (!fob.routers.router.isAvailable() || !fob.routers.router.getWanStatus())
   {
     Serial.println("Fetching WAN list failed!");
-    menu.pages()[routerWANListPageId]->addItem(goToRouterPage, NULL, NULL);
+    fob.menu.pages()[routerWANListPageId]->addItem(goToRouterPage, NULL, NULL);
     M5.Lcd.setCursor(cursorX, cursorY);
     M5.Lcd.setTextColor(RED, BLACK);
     M5.Lcd.println("Unavailable!");
@@ -809,10 +788,10 @@ void getWanList(void *arg)
     return;
   }
 
-  std::vector<PeplinkAPI_WAN *> wanList = router.wanStatus();
+  std::vector<PeplinkAPI_WAN *> wanList = fob.routers.router.wanStatus();
   if (!wanList.size())
   {
-    menu.pages()[routerWANListPageId]->addItem(goToRouterPage, NULL, NULL);
+    fob.menu.pages()[routerWANListPageId]->addItem(goToRouterPage, NULL, NULL);
     Serial.println("No WAN found!");
     M5.Lcd.setCursor(cursorX, cursorY);
     M5.Lcd.println("No WAN found!");
@@ -821,32 +800,32 @@ void getWanList(void *arg)
   ssize_t thisItem;
   for (PeplinkAPI_WAN *wan : wanList)
   {
-    thisItem = menu.pages()[routerWANListPageId]->addItem(goToRouterWANInfoPage, wan->name.c_str(), " ");
+    thisItem = fob.menu.pages()[routerWANListPageId]->addItem(goToRouterWANInfoPage, wan->name.c_str(), " ");
 
     if (!strcmp(wan->statusLED.c_str(), "red"))
-      menu.pages()[routerWANListPageId]->items()[thisItem].setAuxTextBackground(RED);
+      fob.menu.pages()[routerWANListPageId]->items()[thisItem].setAuxTextBackground(RED);
     else if (!strcmp(wan->statusLED.c_str(), "yellow"))
-      menu.pages()[routerWANListPageId]->items()[thisItem].setAuxTextBackground(YELLOW);
+      fob.menu.pages()[routerWANListPageId]->items()[thisItem].setAuxTextBackground(YELLOW);
     else if (!strcmp(wan->statusLED.c_str(), "green"))
-      menu.pages()[routerWANListPageId]->items()[thisItem].setAuxTextBackground(GREEN);
+      fob.menu.pages()[routerWANListPageId]->items()[thisItem].setAuxTextBackground(GREEN);
     else if (!strcmp(wan->statusLED.c_str(), "flash"))
-      menu.pages()[routerWANListPageId]->items()[thisItem].setAuxTextBackground(WHITE);
+      fob.menu.pages()[routerWANListPageId]->items()[thisItem].setAuxTextBackground(WHITE);
     else
-      menu.pages()[routerWANListPageId]->items()[thisItem].setAuxTextBackground(TFT_GREY);
+      fob.menu.pages()[routerWANListPageId]->items()[thisItem].setAuxTextBackground(TFT_GREY);
   }
-  menu.pages()[routerWANListPageId]->addItem(goToWANSummaryPage, "WAN Summary", NULL);
-  menu.pages()[routerWANListPageId]->addItem(goToSimListPage, "SIM Cards", NULL);
-  menu.pages()[routerWANListPageId]->addItem(goToRouterPage, "<--", NULL);
-  menu.pages()[routerWANListPageId]->highlightItem(0);
-  if (screenUpdateTaskHandle)
-    xTaskNotify(screenUpdateTaskHandle, 1, eSetValueWithOverwrite);
+  fob.menu.pages()[routerWANListPageId]->addItem(goToWANSummaryPage, "WAN Summary", NULL);
+  fob.menu.pages()[routerWANListPageId]->addItem(goToSimListPage, "SIM Cards", NULL);
+  fob.menu.pages()[routerWANListPageId]->addItem(goToRouterPage, "<--", NULL);
+  fob.menu.pages()[routerWANListPageId]->highlightItem(0);
+  if (fob.tasks.screenUpdate)
+    xTaskNotify(fob.tasks.screenUpdate, 1, eSetValueWithOverwrite);
 }
 
 /// @brief Stop waiting for Wi-Fi to connect and go to homepage
 void cancelWiFiSetup(void *arg)
 {
   WiFi.mode(WIFI_MODE_NULL);
-  menu.goToPage(lastVisitedPageId);
+  fob.menu.goToPage(lastVisitedPageId);
 }
 
 /// @brief Save the selected SSID as primary or secondary
@@ -860,11 +839,11 @@ void saveSSID(void *arg)
   Serial.printf("Saved %s SSID: '%s'\n", thisItem->mainText(), tempSSID.c_str());
   if (!strcmp(thisItem->mainText(), "Primary"))
   {
-    wifi1Ssid = tempSSID;
-    primarySsidValid = true;
+    fob.wifi.ssidStaPrimary = tempSSID;
+    fob.wifi.usePrimarySsid = true;
   }
   else
-    wifi2Ssid = tempSSID;
+    fob.wifi.ssidStaSecondary = tempSSID;
   savePreferences();
   goToWiFiPage();
 }
@@ -878,7 +857,7 @@ void saveItemSSID(void *arg)
   MinuPageItem *thisItem = (MinuPageItem *)arg;
   tempSSID = thisItem->mainText();
 
-  menu.goToPage(saveSSIDAsPageId);
+  fob.menu.goToPage(saveSSIDAsPageId);
 }
 
 /// @brief Delete all child items of a menu page
@@ -913,14 +892,14 @@ void simListPageClosed(void *arg)
 void startWiFiScan(void *arg)
 {
   goToScanResultPage();
-  if (screenUpdateTaskHandle)
-    xTaskNotify(screenUpdateTaskHandle, 1, eSetValueWithOverwrite);
-  while (!menu.rendered())
+  if (fob.tasks.screenUpdate)
+    xTaskNotify(fob.tasks.screenUpdate, 1, eSetValueWithOverwrite);
+  while (!fob.menu.rendered())
     delay(10);
   const int cursorX = M5.Lcd.getCursorX();
   const int cursorY = M5.Lcd.getCursorY();
 
-  wifiTimeout = true;
+  fob.wifi.timedOut = true;
   WiFi.mode(WIFI_MODE_NULL);
   delay(100);
   WiFi.mode(WIFI_MODE_STA);
@@ -939,51 +918,51 @@ void startWiFiScan(void *arg)
     M5.Lcd.printf("done. %d found\n", n);
 
     for (int i = 0; i < n; ++i)
-      menu.pages()[scanResultPageId]->addItem(saveItemSSID, WiFi.SSID(i).c_str(), String(WiFi.RSSI(i)).c_str());
+      fob.menu.pages()[scanResultPageId]->addItem(saveItemSSID, WiFi.SSID(i).c_str(), String(WiFi.RSSI(i)).c_str());
 
     WiFi.scanDelete();
   }
     
   delay(3000);
-  menu.pages()[scanResultPageId]->addItem(goToWiFiPage, "<--", NULL);
-  if (screenUpdateTaskHandle)
-    xTaskNotify(screenUpdateTaskHandle, 1, eSetValueWithOverwrite);
+  fob.menu.pages()[scanResultPageId]->addItem(goToWiFiPage, "<--", NULL);
+  if (fob.tasks.screenUpdate)
+    xTaskNotify(fob.tasks.screenUpdate, 1, eSetValueWithOverwrite);
     
-  while (!menu.rendered())
+  while (!fob.menu.rendered())
     delay(10);
 }
 
 void startShutdownCountdown(void *arg = NULL)
 {
-  menu.pages()[countdownPageId]->setTitle("SHUTDOWN");
-  if (menu.currentPageId() != countdownPageId)
+  fob.menu.pages()[countdownPageId]->setTitle("SHUTDOWN");
+  if (fob.menu.currentPageId() != countdownPageId)
     goToCountdownPage();
 
-  if (countdownTaskHandle)
-    vTaskDelete(countdownTaskHandle);
-  xTaskCreatePinnedToCore(countdownTask, "Shutdown Countdown", 2048, (void *)UI_COUNTDOWN_TYPE_SHUTDOWN, 2, &countdownTaskHandle, ARDUINO_RUNNING_CORE);
+  if (fob.tasks.countdown)
+    vTaskDelete(fob.tasks.countdown);
+  xTaskCreatePinnedToCore(countdownTask, "Shutdown Countdown", 2048, (void *)UI_COUNTDOWN_TYPE_SHUTDOWN, 2, &fob.tasks.countdown, ARDUINO_RUNNING_CORE);
 }
 
 void startRebootCountdown(void *arg = NULL)
 {
-  menu.pages()[countdownPageId]->setTitle("REBOOT");
-  if (menu.currentPageId() != countdownPageId)
+  fob.menu.pages()[countdownPageId]->setTitle("REBOOT");
+  if (fob.menu.currentPageId() != countdownPageId)
     goToCountdownPage();
 
-  if (countdownTaskHandle)
-    vTaskDelete(countdownTaskHandle);
-  xTaskCreatePinnedToCore(countdownTask, "Reboot Countdown", 2048, (void *)UI_COUNTDOWN_TYPE_REBOOT, 2, &countdownTaskHandle, ARDUINO_RUNNING_CORE);
+  if (fob.tasks.countdown)
+    vTaskDelete(fob.tasks.countdown);
+  xTaskCreatePinnedToCore(countdownTask, "Reboot Countdown", 2048, (void *)UI_COUNTDOWN_TYPE_REBOOT, 2, &fob.tasks.countdown, ARDUINO_RUNNING_CORE);
 }
 
 void startFactoryResetCountdown(void *arg = NULL)
 {
-  menu.pages()[countdownPageId]->setTitle("FACTORY RESET REBOOT");
-  if (menu.currentPageId() != countdownPageId)
+  fob.menu.pages()[countdownPageId]->setTitle("FACTORY RESET REBOOT");
+  if (fob.menu.currentPageId() != countdownPageId)
     goToCountdownPage();
 
-  if (countdownTaskHandle)
-    vTaskDelete(countdownTaskHandle);
-  xTaskCreatePinnedToCore(countdownTask, "Reset Countdown", 2048, (void *)UI_COUNTDOWN_TYPE_FACTORY_RESET, 2, &countdownTaskHandle, ARDUINO_RUNNING_CORE);
+  if (fob.tasks.countdown)
+    vTaskDelete(fob.tasks.countdown);
+  xTaskCreatePinnedToCore(countdownTask, "Reset Countdown", 2048, (void *)UI_COUNTDOWN_TYPE_FACTORY_RESET, 2, &fob.tasks.countdown, ARDUINO_RUNNING_CORE);
 }
 
 void initiateFactoryReset(void *arg = NULL)
@@ -995,13 +974,13 @@ void initiateFactoryReset(void *arg = NULL)
 
 void uiMenuInit(void)
 {
-  MinuPage countdownPage(NULL, menu.numPages());
+  MinuPage countdownPage(NULL, fob.menu.numPages());
   countdownPage.setOpenedCallback(pageOpenedCallback);
   countdownPage.setClosedCallback(pageClosedCallback);
   countdownPage.setRenderedCallback(pageRenderedCallback);
-  countdownPageId = menu.addPage(countdownPage);
+  countdownPageId = fob.menu.addPage(countdownPage);
 
-  MinuPage homePage("1SIMPLECONNECT", menu.numPages());
+  MinuPage homePage("1SIMPLECONNECT", fob.menu.numPages());
   homepageWifiItem = homePage.addItem(goToWiFiPage, "Wi-Fi", " ", updateWiFiItem);
   homePage.addItem(goToPingTargetsPage, "Network Diags", NULL);
   homePage.addItem(goToRouterPage, "Router", NULL);
@@ -1014,9 +993,9 @@ void uiMenuInit(void)
   homePage.setOpenedCallback(pageOpenedCallback);
   homePage.setClosedCallback(pageClosedCallback);
   homePage.setRenderedCallback(pageRenderedCallback);
-  homePageId = menu.addPage(homePage);
+  homePageId = fob.menu.addPage(homePage);
 
-  MinuPage wifiPage("WI-FI", menu.numPages());
+  MinuPage wifiPage("WI-FI", fob.menu.numPages());
   wifiPage.addItem(startWiFiConnectCountdown, "Connect STA", NULL);
   wifiPage.addItem(startWiFiAP, "Start AP", NULL);
   wifiPage.addItem(startWiFiScan, "Scan", NULL);
@@ -1024,42 +1003,42 @@ void uiMenuInit(void)
   wifiPage.setOpenedCallback(pageOpenedCallback);
   wifiPage.setClosedCallback(pageClosedCallback);
   wifiPage.setRenderedCallback(lcdPrintWiFiStatus);
-  wifiPageId = menu.addPage(wifiPage);
+  wifiPageId = fob.menu.addPage(wifiPage);
 
-  MinuPage wifiPromptPage("WI-FI DISCON", menu.numPages());
+  MinuPage wifiPromptPage("WI-FI DISCON", fob.menu.numPages());
   wifiPromptPage.addItem(startWiFiConnectCountdown, "Retry STA", NULL);
   wifiPromptPage.addItem(startWiFiAP, "Start AP", NULL);
   wifiPromptPage.addItem(cancelWiFiSetup, "Cancel", NULL);
   wifiPromptPage.setOpenedCallback(pageOpenedCallback);
   wifiPromptPage.setClosedCallback(pageClosedCallback);
   wifiPromptPage.setRenderedCallback(pageRenderedCallback);
-  wifiPromptPageId = menu.addPage(wifiPromptPage);
+  wifiPromptPageId = fob.menu.addPage(wifiPromptPage);
 
-  MinuPage saveSSIDAsPage("SAVE SSID AS", menu.numPages());
+  MinuPage saveSSIDAsPage("SAVE SSID AS", fob.menu.numPages());
   saveSSIDAsPage.addItem(saveSSID, "Primary", NULL);
   saveSSIDAsPage.addItem(saveSSID, "Secondary", NULL);
   saveSSIDAsPage.addItem(goToWiFiPage, "<--", NULL);
   saveSSIDAsPage.setOpenedCallback(pageOpenedCallback);
   saveSSIDAsPage.setClosedCallback(pageClosedCallback);
   saveSSIDAsPage.setRenderedCallback(pageRenderedCallback);
-  saveSSIDAsPageId = menu.addPage(saveSSIDAsPage);
+  saveSSIDAsPageId = fob.menu.addPage(saveSSIDAsPage);
 
-  MinuPage scanResultPage("SCAN RESULT", menu.numPages());
+  MinuPage scanResultPage("SCAN RESULT", fob.menu.numPages());
   scanResultPage.setOpenedCallback(pageOpenedCallback);
   scanResultPage.setClosedCallback(deleteAllPageItems);
   scanResultPage.setRenderedCallback(pageRenderedCallback);
-  scanResultPageId = menu.addPage(scanResultPage);
+  scanResultPageId = fob.menu.addPage(scanResultPage);
 
-  MinuPage pingTargetsPage("NETWORK DIAG", menu.numPages());
-  for (PingTarget target : pingTargets)
+  MinuPage pingTargetsPage("NETWORK DIAG", fob.menu.numPages());
+  for (PingTarget target : fob.pingTargets)
     pingTargetsPage.addItem(NULL, target.displayHostname.c_str(), " ");
   pingTargetsPage.addItem(goToHomePage, "<--", NULL);
   pingTargetsPage.setOpenedCallback(startDataUpdate);
   pingTargetsPage.setClosedCallback(stopDataUpdate);
   pingTargetsPage.setRenderedCallback(pageRenderedCallback);
-  pingTargetsPageId = menu.addPage(pingTargetsPage);
+  pingTargetsPageId = fob.menu.addPage(pingTargetsPage);
 
-  MinuPage routerPage("ROUTER", menu.numPages());
+  MinuPage routerPage("ROUTER", fob.menu.numPages());
   routerPage.addItem(goToRouterInfoPage, "Info", NULL);
   routerPage.addItem(goToRouterLocationPage, "Location", NULL);
   routerPage.addItem(goToRouterWANListPage, "WAN Status", NULL);
@@ -1067,83 +1046,83 @@ void uiMenuInit(void)
   routerPage.setOpenedCallback(pageOpenedCallback);
   routerPage.setClosedCallback(pageClosedCallback);
   routerPage.setRenderedCallback(pageRenderedCallback);
-  routerPageId = menu.addPage(routerPage);
+  routerPageId = fob.menu.addPage(routerPage);
 
-  MinuPage routerInfoPage("ROUTER INFO", menu.numPages(), true);
+  MinuPage routerInfoPage("ROUTER INFO", fob.menu.numPages(), true);
   routerInfoPage.addItem(goToRouterPage, NULL, NULL);
   routerInfoPage.setOpenedCallback(pageOpenedCallback);
   routerInfoPage.setClosedCallback(pageClosedCallback);
   routerInfoPage.setRenderedCallback(lcdPrintRouterInfo);
-  routerInfoPageId = menu.addPage(routerInfoPage);
+  routerInfoPageId = fob.menu.addPage(routerInfoPage);
 
-  MinuPage routerLocationPage("ROUTER LOCATION", menu.numPages(), true);
+  MinuPage routerLocationPage("ROUTER LOCATION", fob.menu.numPages(), true);
   routerLocationPage.addItem(goToRouterPage, NULL, NULL);
   routerLocationPage.setOpenedCallback(pageOpenedCallback);
   routerLocationPage.setClosedCallback(pageClosedCallback);
   routerLocationPage.setRenderedCallback(lcdPrintRouterLocation);
-  routerLocationPageId = menu.addPage(routerLocationPage);
+  routerLocationPageId = fob.menu.addPage(routerLocationPage);
 
-  MinuPage routerWANListPage("WAN LIST", menu.numPages());
+  MinuPage routerWANListPage("WAN LIST", fob.menu.numPages());
   routerWANListPage.setOpenedCallback(getWanList);
   routerWANListPage.setClosedCallback(wanListPageClosed);
   routerWANListPage.setRenderedCallback(pageRenderedCallback);
-  routerWANListPageId = menu.addPage(routerWANListPage);
+  routerWANListPageId = fob.menu.addPage(routerWANListPage);
 
-  MinuPage routerWANInfoPage("WAN STATUS", menu.numPages(), true);
+  MinuPage routerWANInfoPage("WAN STATUS", fob.menu.numPages(), true);
   routerWANInfoPage.addItem(goToRouterWANListPage, NULL, NULL);
   routerWANInfoPage.setOpenedCallback(pageOpenedCallback);
   routerWANInfoPage.setClosedCallback(stopDataUpdate);
   routerWANInfoPage.setRenderedCallback(startDataUpdate);
-  routerWANInfoPageId = menu.addPage(routerWANInfoPage);
+  routerWANInfoPageId = fob.menu.addPage(routerWANInfoPage);
 
-  MinuPage routerWANSummaryPage("WAN STATUS", menu.numPages(), true);
+  MinuPage routerWANSummaryPage("WAN STATUS", fob.menu.numPages(), true);
   routerWANSummaryPage.addItem(goToRouterWANListPage, NULL, NULL);
   routerWANSummaryPage.setOpenedCallback(pageOpenedCallback);
   routerWANSummaryPage.setClosedCallback(stopDataUpdate);
   routerWANSummaryPage.setRenderedCallback(startDataUpdate);
-  routerWANSummaryPageId = menu.addPage(routerWANSummaryPage);
+  routerWANSummaryPageId = fob.menu.addPage(routerWANSummaryPage);
 
-  MinuPage simListPage("SIM LIST", menu.numPages());
+  MinuPage simListPage("SIM LIST", fob.menu.numPages());
   simListPage.setOpenedCallback(showSimList);
   simListPage.setClosedCallback(simListPageClosed);
   simListPage.setRenderedCallback(pageRenderedCallback);
-  simListPageId = menu.addPage(simListPage);
+  simListPageId = fob.menu.addPage(simListPage);
 
-  MinuPage simInfoPage("SIM STATUS", menu.numPages(), true);
+  MinuPage simInfoPage("SIM STATUS", fob.menu.numPages(), true);
   simInfoPage.addItem(goToSimListPage, NULL, NULL);
   simInfoPage.setOpenedCallback(pageOpenedCallback);
   simInfoPage.setClosedCallback(pageClosedCallback);
   simInfoPage.setRenderedCallback(showSimInfo);
-  simInfoPageId = menu.addPage(simInfoPage);
+  simInfoPageId = fob.menu.addPage(simInfoPage);
 
-  MinuPage sensorsPage("SENSORS", menu.numPages(), true);
+  MinuPage sensorsPage("SENSORS", fob.menu.numPages(), true);
   sensorsPage.addItem(goToHomePage, NULL, NULL);
   sensorsPage.setOpenedCallback(pageOpenedCallback);
   sensorsPage.setClosedCallback(stopDataUpdate);
   sensorsPage.setRenderedCallback(startDataUpdate);
-  sensorsPageId = menu.addPage(sensorsPage);
+  sensorsPageId = fob.menu.addPage(sensorsPage);
 
-  MinuPage timePage("TIME", menu.numPages(), true);
+  MinuPage timePage("TIME", fob.menu.numPages(), true);
   timePage.addItem(goToHomePage, NULL, NULL);
   timePage.setOpenedCallback(pageOpenedCallback);
   timePage.setClosedCallback(stopDataUpdate);
   timePage.setRenderedCallback(startDataUpdate);
-  timePageId = menu.addPage(timePage);
+  timePageId = fob.menu.addPage(timePage);
 
-  MinuPage fobInfoPage("FOB INFO", menu.numPages(), true);
+  MinuPage fobInfoPage("FOB INFO", fob.menu.numPages(), true);
   fobInfoPage.addItem(goToHomePage, NULL, NULL);
   fobInfoPage.setOpenedCallback(pageOpenedCallback);
   fobInfoPage.setClosedCallback(stopDataUpdate);
   fobInfoPage.setRenderedCallback(startDataUpdate);
-  fobInfoPageId = menu.addPage(fobInfoPage);
+  fobInfoPageId = fob.menu.addPage(fobInfoPage);
 
-  MinuPage factoryResetPage("FACTORY RESET", menu.numPages());
+  MinuPage factoryResetPage("FACTORY RESET", fob.menu.numPages());
   factoryResetPage.addItem(initiateFactoryReset, "Factory Reset", NULL);
   factoryResetPage.addItem(goToHomePage, "Cancel", NULL);
   factoryResetPage.setOpenedCallback(pageOpenedCallback);
   factoryResetPage.setClosedCallback(pageClosedCallback);
   factoryResetPage.setRenderedCallback(pageRenderedCallback);
-  factoryResetPageId = menu.addPage(factoryResetPage);
+  factoryResetPageId = fob.menu.addPage(factoryResetPage);
 
   String cookie;
    if ( homePageId < 0 ||
@@ -1163,26 +1142,26 @@ void uiMenuInit(void)
       
    lastVisitedPageId = wifiPageId;
 
-  xTaskCreatePinnedToCore(screenWatchTask, "Screen Watch Task", 4096, NULL, 1, &screenWatchTaskHandle, ARDUINO_RUNNING_CORE);
-  xTaskCreatePinnedToCore(screenUpdateTask, "Screen Update Task", 4096, NULL, 1, &screenUpdateTaskHandle, ARDUINO_RUNNING_CORE);
-  xTaskCreatePinnedToCore(buttonWatchTask, "Button Task", 4096, NULL, 1, &buttonWatchTaskHandle, ARDUINO_RUNNING_CORE);
-  xTaskCreatePinnedToCore(wifiWatchTask, "WiFi Watch Task", 4096, NULL, 1, &wifiWatchTaskHandle, ARDUINO_RUNNING_CORE);
+  xTaskCreatePinnedToCore(screenWatchTask, "Screen Watch Task", 4096, NULL, 1, &fob.tasks.screenWatch, ARDUINO_RUNNING_CORE);
+  xTaskCreatePinnedToCore(screenUpdateTask, "Screen Update Task", 4096, NULL, 1, &fob.tasks.screenUpdate, ARDUINO_RUNNING_CORE);
+  xTaskCreatePinnedToCore(buttonWatchTask, "Button Task", 4096, NULL, 1, &fob.tasks.buttonWatch, ARDUINO_RUNNING_CORE);
+  xTaskCreatePinnedToCore(wifiWatchTask, "WiFi Watch Task", 4096, NULL, 1, &fob.tasks.wifiWatch, ARDUINO_RUNNING_CORE);
   startWiFiConnectCountdown();
 
-  while(booting)
+  while(fob.booting)
     delay(10);
 
   if (WiFi.status() == WL_CONNECTED)
   {
-    router.setIP(routerIP);
-    router.setPort(routerPort);
-    cookie = router.begin(routerUsername, routerPassword, routerClientName, routerClientScope, true);
+    fob.routers.router.setIP(fob.routers.ip);
+    fob.routers.router.setPort(fob.routers.port);
+    cookie = fob.routers.router.begin(fob.routers.username, fob.routers.password, fob.routers.clientName, fob.routers.clientScope, true);
     if (!cookie.length())
       Serial.println("!!Router init Fail!!");
     else
     {
       Serial.println("Router connected!");
-      if(menu.currentPageId() == pingTargetsPageId)
+      if(fob.menu.currentPageId() == pingTargetsPageId)
         goToRouterWANListPage();
     }
   }
@@ -1200,8 +1179,8 @@ err:
 void screenWatchTask(void *arg)
 {
   Serial.println("Started screenWatchTask");
-  ssize_t lastSelectedPage = menu.currentPageId();
-  ssize_t lastHighlightedItem = menu.currentPage()->highlightedIndex();
+  ssize_t lastSelectedPage = fob.menu.currentPageId();
+  ssize_t lastHighlightedItem = fob.menu.currentPage()->highlightedIndex();
 
   bool updateScreen = false;
   long lastStackCheckTime = 0;
@@ -1209,29 +1188,29 @@ void screenWatchTask(void *arg)
   for (;;)
   {
     // If a short press of A is detected, highlight the next item
-    if (shortPressA)
+    if (fob.buttons.btnPressA == STARLINKFOB_BUTTONPRESS_SHORT)
     {
 #ifdef UI_BEEP
       M5.Speaker.tone(8000, 30);
 #endif
-      if (menu.currentPageId() != countdownPageId)
+      if (fob.menu.currentPageId() != countdownPageId)
       {  
-        menu.currentPage()->highlightNextItem();
-        if(lastHighlightedItem != menu.currentPage()->highlightedIndex())
+        fob.menu.currentPage()->highlightNextItem();
+        if(lastHighlightedItem != fob.menu.currentPage()->highlightedIndex())
           updateScreen = true;
       }
-      shortPressA = false;
+      fob.buttons.btnPressA = STARLINKFOB_BUTTONPRESS_NONE;
     }
 
     // If a long press of A or short press of B is detected, select the currently highlighted item
-    if (longPressA || shortPressB)
+    if (fob.buttons.btnPressA == STARLINKFOB_BUTTONPRESS_LONG || fob.buttons.btnPressB == STARLINKFOB_BUTTONPRESS_SHORT)
     {
 #ifdef UI_BEEP
       M5.Speaker.tone(5000, 30);
 #endif
-      if (menu.currentPageId() != countdownPageId && menu.currentPage()->highlightedIndex() >= 0)
+      if (fob.menu.currentPageId() != countdownPageId && fob.menu.currentPage()->highlightedIndex() >= 0)
       {
-        MinuPageItem highlightedItem = menu.currentPage()->highlightedItem();
+        MinuPageItem highlightedItem = fob.menu.currentPage()->highlightedItem();
         if (highlightedItem.link())
           highlightedItem.link()(&highlightedItem);
 #ifdef UI_DEBUG_LOG
@@ -1239,50 +1218,50 @@ void screenWatchTask(void *arg)
 #endif
       }
 
-      longPressA = false;
-      shortPressB = false;
+      fob.buttons.btnPressA = STARLINKFOB_BUTTONPRESS_NONE;
+      fob.buttons.btnPressB = STARLINKFOB_BUTTONPRESS_NONE;
     }
 
     // If a long press of B is detected, cancel any ongoing shutdown
-    if (longPressB)
+    if (fob.buttons.btnPressB == STARLINKFOB_BUTTONPRESS_LONG)
     {
-      if (countdownTaskHandle)
-        xTaskNotify(countdownTaskHandle, 1, eSetValueWithOverwrite);
+      if (fob.tasks.countdown)
+        xTaskNotify(fob.tasks.countdown, 1, eSetValueWithOverwrite);
 
-      longPressB = false;
+      fob.buttons.btnPressB = STARLINKFOB_BUTTONPRESS_NONE;
     }
 
     // If the current page has changed, log the change
-    if (lastSelectedPage != menu.currentPageId())
+    if (lastSelectedPage != fob.menu.currentPageId())
     {
 #ifdef UI_DEBUG_LOG
-      Serial.printf("Changed from page %d to page %d\n", lastSelectedPage, menu.currentPageId());
+      Serial.printf("Changed from page %d to page %d\n", lastSelectedPage, fob.menu.currentPageId());
 #endif
-      lastSelectedPage = menu.currentPageId();
-      lastHighlightedItem = menu.currentPage()->highlightedIndex();
+      lastSelectedPage = fob.menu.currentPageId();
+      lastHighlightedItem = fob.menu.currentPage()->highlightedIndex();
     }
 
     // If the current page has changed, log the change
-    if (lastHighlightedItem != menu.currentPage()->highlightedIndex())
+    if (lastHighlightedItem != fob.menu.currentPage()->highlightedIndex())
     {
 #ifdef UI_DEBUG_LOG
-      Serial.printf("Highlighted item changed: Old = %d | New = %d\n", lastHighlightedItem, menu.currentPage()->highlightedIndex());
+      Serial.printf("Highlighted item changed: Old = %d | New = %d\n", lastHighlightedItem, fob.menu.currentPage()->highlightedIndex());
 #endif
-      lastHighlightedItem = menu.currentPage()->highlightedIndex();
+      lastHighlightedItem = fob.menu.currentPage()->highlightedIndex();
     }
 
-    if (updateScreen || !menu.rendered())
+    if (updateScreen || !fob.menu.rendered())
     {
       updateScreen = false;
-      if (countdownTaskHandle && menu.currentPageId() != countdownPageId)
+      if (fob.tasks.countdown && fob.menu.currentPageId() != countdownPageId)
       {
-        vTaskDelete(countdownTaskHandle);
-        countdownTaskHandle = NULL;
+        vTaskDelete(fob.tasks.countdown);
+        fob.tasks.countdown = NULL;
       }
 
-      if (screenUpdateTaskHandle)
-        xTaskNotify(screenUpdateTaskHandle, 1, eSetValueWithOverwrite);
-      while(!menu.rendered())
+      if (fob.tasks.screenUpdate)
+        xTaskNotify(fob.tasks.screenUpdate, 1, eSetValueWithOverwrite);
+      while(!fob.menu.rendered())
         delay(10);
     }
 
@@ -1301,56 +1280,57 @@ void buttonWatchTask(void *arg)
   Serial.println("buttonWatchTask started");
 
   long lastStackCheckTime = 0;
+  long currentTime = 0;
 
   for (;;)
   {
     M5.update();
     currentTime = millis();
     if (M5.BtnA.wasPressed())
-      lastButtonADownTime = currentTime;
+      fob.buttons.pressDurationA = currentTime;
 
     if (M5.BtnA.wasReleased())
     {
-      if (lastButtonADownTime + LONG_PRESS_THRESHOLD_MS < currentTime)
+      if (fob.buttons.pressDurationA + LONG_PRESS_THRESHOLD_MS < currentTime)
       {
-        longPressA = true;
+        fob.buttons.btnPressA = STARLINKFOB_BUTTONPRESS_LONG;
 #ifdef UI_DEBUG_LOG
         Serial.print("Long");
 #endif
       }
       else
       {
-        shortPressA = true;
+        fob.buttons.btnPressA = STARLINKFOB_BUTTONPRESS_SHORT;
 #ifdef UI_DEBUG_LOG
         Serial.print("Short");
 #endif
       }
 #ifdef UI_DEBUG_LOG
-      Serial.printf(" press A: %lums\n", currentTime - lastButtonADownTime);
+      Serial.printf(" press A: %lums\n", currentTime - fob.buttons.pressDurationA);
 #endif
     }
 
     if (M5.BtnB.wasPressed())
-      lastButtonBDownTime = currentTime;
+      fob.buttons.pressDurationB = currentTime;
 
     if (M5.BtnB.wasReleased())
     {
-      if (lastButtonBDownTime + LONG_PRESS_THRESHOLD_MS < currentTime)
+      if (fob.buttons.pressDurationB + LONG_PRESS_THRESHOLD_MS < currentTime)
       {
-        longPressB = true;
+        fob.buttons.btnPressB = STARLINKFOB_BUTTONPRESS_LONG;
 #ifdef UI_DEBUG_LOG
         Serial.print("Long");
 #endif
       }
       else
       {
-        shortPressB = true;
+        fob.buttons.btnPressB = STARLINKFOB_BUTTONPRESS_LONG;
 #ifdef UI_DEBUG_LOG
         Serial.print("Short");
 #endif
       }
 #ifdef UI_DEBUG_LOG
-      Serial.printf(" press B: %ldms\n", currentTime - lastButtonBDownTime);
+      Serial.printf(" press B: %ldms\n", currentTime - fob.buttons.pressDurationB);
 #endif
     }
 #ifdef UI_DEBUG_LOG
@@ -1371,8 +1351,8 @@ void countdownTask(void *arg)
 
   if (countdownType == UI_COUNTDOWN_TYPE_WIFI)
   {
-    min = wifiTimeoutMs ? (wifiTimeoutMs / 1000) / 60 : WIFI_COUNTDOWN_SECONDS / 60;
-    sec = wifiTimeoutMs ? (wifiTimeoutMs / 1000) % 60 : WIFI_COUNTDOWN_SECONDS % 60;
+    min = fob.wifi.timeoutMs ? (fob.wifi.timeoutMs / 1000) / 60 : WIFI_COUNTDOWN_SECONDS / 60;
+    sec = fob.wifi.timeoutMs ? (fob.wifi.timeoutMs / 1000) % 60 : WIFI_COUNTDOWN_SECONDS % 60;
   }
   else if (countdownType == UI_COUNTDOWN_TYPE_SHUTDOWN)
   {
@@ -1397,7 +1377,7 @@ void countdownTask(void *arg)
     vTaskDelete(NULL);
   }
 
-  while (!menu.rendered())
+  while (!fob.menu.rendered())
     delay(10);
 
   if (countdownType == UI_COUNTDOWN_TYPE_WIFI)
@@ -1444,14 +1424,14 @@ void countdownTask(void *arg)
   {
     if (countdownType == UI_COUNTDOWN_TYPE_WIFI)
     {
-      if (booting && primarySsidValid)
+      if (fob.booting && fob.wifi.usePrimarySsid)
       {
-        primarySsidValid = false;
+        fob.wifi.usePrimarySsid = false;
         WiFi.mode(WIFI_MODE_NULL);
         delay(100);
       }
       else
-        wifiTimeout = true;
+        fob.wifi.timedOut = true;
 
       goToWiFiPromptPage();
     }
@@ -1490,22 +1470,22 @@ void countdownTask(void *arg)
     {
       if (stopCountdown)
       {
-        wifiTimeout = true;
+        fob.wifi.timedOut = true;
         goToWiFiPromptPage();
       }
-      else if (booting)
+      else if (fob.booting)
       {  
-        if(!httpServerStarted)
+        if(!fob.servers.started)
         {
-          httpServerStarted = true;
+          fob.servers.started = true;
           Serial.println("Starting HTTP Server");
           startHttpServer();
         }
         goToPingTargetsPage();
-        xTaskNotify(wifiWatchTaskHandle, 1, eSetValueWithOverwrite);
+        xTaskNotify(fob.tasks.wifiWatch, 1, eSetValueWithOverwrite);
       }
       else
-        menu.goToPage(lastVisitedPageId);
+        fob.menu.goToPage(lastVisitedPageId);
     }
     else if (countdownType == UI_COUNTDOWN_TYPE_SHUTDOWN || countdownType == UI_COUNTDOWN_TYPE_REBOOT)
       goToHomePage();
@@ -1515,13 +1495,13 @@ void countdownTask(void *arg)
   M5.Speaker.tone(9000, 300);
 #endif
 
-  countdownTaskHandle = NULL;
+  fob.tasks.countdown = NULL;
   vTaskDelete(NULL);
 }
 
 void dataUpdateTask(void *arg)
 {
-  while (!menu.rendered())
+  while (!fob.menu.rendered())
     delay(10);
   
   const int cursorX = M5.Lcd.getCursorX();
@@ -1554,14 +1534,14 @@ void dataUpdateTask(void *arg)
     Serial.printf("Update type %d done\n", updateType);
     vTaskDelay(pdMS_TO_TICKS(1000));
 
-    if (updateType == UI_UPDATE_TYPE_PING && booting && pingTargets[0].pingOK)
+    if (updateType == UI_UPDATE_TYPE_PING && fob.booting && fob.pingTargets[0].pingOK)
     {
-      booting = false;
+      fob.booting = false;
       break;
     }
   }
 
-  dataUpdateTaskHandle = NULL;
+  fob.tasks.dataUpdate = NULL;
   vTaskDelete(NULL);
 }
 
@@ -1577,7 +1557,7 @@ void screenUpdateTask(void *arg)
       M5.Lcd.clear();
       M5.Lcd.setCursor(0, 0);
       M5.Lcd.setTextSize(TEXT_SIZE_DEFAULT);
-      menu.render(MINU_ITEM_MAX_COUNT);
+      fob.menu.render(MINU_ITEM_MAX_COUNT);
     }
   }
   vTaskDelete(NULL);
@@ -1589,9 +1569,9 @@ void wifiWatchTask(void* arg)
   ulTaskNotifyTake(false, portMAX_DELAY);
   for(;;)
   {
-    if (WiFi.getMode() == WIFI_MODE_STA && WiFi.status() != WL_CONNECTED && !countdownTaskHandle && !wifiTimeout)
+    if (WiFi.getMode() == WIFI_MODE_STA && WiFi.status() != WL_CONNECTED && !fob.tasks.countdown && !fob.wifi.timedOut)
     {
-      lastVisitedPageId = menu.currentPageId();
+      lastVisitedPageId = fob.menu.currentPageId();
       startWiFiConnectCountdown(NULL);
     }
   }

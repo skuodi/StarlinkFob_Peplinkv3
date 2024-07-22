@@ -18,6 +18,7 @@
 
 #include "PeplinkAPI.h"
 #include "config.h"
+#include "Minu/minu.hpp"
 
 #define TFT_GREY 0x5AEB  // New colour
 
@@ -25,15 +26,15 @@
 typedef struct
 {
     // SSID of the first-priority Wi-Fi network the fob attempts to connect to in station mode
-    char wifi1Ssid[NAME_MAX_LEN];             
-    char wifi1Password[PASSWORD_MAX_LEN];
+    char ssidStaPrimary[NAME_MAX_LEN];             
+    char passwordStaPrimary[PASSWORD_MAX_LEN];
     // SSID of the second-priority Wi-Fi network the fob attempts to connect to in station mode after
     // connecting to the first-priority network fails
-    char wifi2Ssid[NAME_MAX_LEN];
-    char wifi2Password[PASSWORD_MAX_LEN];
+    char ssidStaSecondary[NAME_MAX_LEN];
+    char passwordStaSecondary[PASSWORD_MAX_LEN];
     // SSID used for the local AP 
-    char wifiSsidSoftAp[NAME_MAX_LEN];
-    char wifiPasswordSoftAp[PASSWORD_MAX_LEN];
+    char ssidSoftAp[NAME_MAX_LEN];
+    char passwordSoftAp[PASSWORD_MAX_LEN];
     // Router IP address
     char ip[IPV4_MAX_LEN];
     // Router port
@@ -68,54 +69,114 @@ typedef struct
 
 typedef struct 
 {
-  char lastAlertTime[20];
-  float lastAlertThresh;
-  float lastAlertTemp;
+  char lastTempAlertTime[20];
+  float lastTempAlertThresh;
+  float lastTempAlertTemp;
 } AlertTimestamp_t;
 
-/// @brief Handle of the local HTTP server
-extern WebServer httpServer;
+typedef struct 
+{
+  String ssidStaPrimary;
+  String passwordStaPrimary;
+  String ssidStaSecondary;
+  String passwordStaSecondary;
+  String ssidSoftAp;
+  String passwordSoftAp;
+  bool usePrimarySsid;
+  bool timedOut;
+  long timeoutMs;
+  long timestamp;
+}StarlinkFob_WifiState_t;
 
-/// @brief Handle used for firmware updates over HTTP
-extern HTTPUpdateServer httpUpdater;
+typedef struct 
+{
+  /// @brief Handle of the local HTTP server
+  WebServer httpServer;
+  /// @brief Handle used for firmware updates over HTTP
+  HTTPUpdateServer updateServer;
+  bool started;
+}StarlinkFob_HttpServerState_t;
 
-/// @brief List of targets to be pinged
-extern std::vector<PingTarget> pingTargets;
+typedef struct 
+{
+  PeplinkRouter router;
+  String ip;
+  uint16_t port;
+  String username;
+  String password;
+  String clientName;
+  PeplinkAPI_ClientScope_t clientScope;
+}StarlinkFob_RouterState_t;
 
-/// Runtime variables used to hold user-defined credentials.
-extern String wifi1Ssid;
-extern String wifi1Password;
-extern String wifi2Ssid;
-extern String wifi2Password;
-extern String wifiSsidSoftAp;
-extern String wifiPasswordSoftAp;
-extern String routerIP;
-extern uint16_t routerPort;
-extern String routerUsername;
-extern String routerPassword;
-extern String routerClientName;
-extern PeplinkAPI_ClientScope_t routerClientScope;
-extern long wifiTimeoutMs;
-extern long wifiTimestamp;
+typedef struct 
+{
+  SHT3X sht;
+  QMP6988 qmp;
+  bool shtAvailable;
+  bool qmpAvailable;
+}StarlinkFob_SensorState_t;
 
-extern String lastShutdownTime;
-extern String lastShutdownTimezone;
-extern uint64_t lastShutdownRuntime;
+typedef enum
+{
+  STARLINKFOB_BUTTONPRESS_NONE,
+  STARLINKFOB_BUTTONPRESS_SHORT,
+  STARLINKFOB_BUTTONPRESS_LONG,
+}StarlinkFob_ButtonPress_t;
 
-extern Preferences cookiePrefs;
-extern Preferences routerPrefs;
-extern PeplinkRouter router;
+typedef struct 
+{
+  int32_t pressDurationA;
+  StarlinkFob_ButtonPress_t btnPressA;
+  bool isPressedA;
 
-extern bool httpServerStarted;
+  int32_t pressDurationB;
+  StarlinkFob_ButtonPress_t btnPressB;
+  bool isPressedB;
 
-extern SHT3X sht;
-extern QMP6988 qmp;
-extern bool shtSensorAvailable;
-extern bool qmpSensorAvailable;
+  int32_t pressDurationC;
+  StarlinkFob_ButtonPress_t btnPressC;
+  bool isPressedC;
+}StarlinkFob_ButtonState_t;
 
-extern String lastAlertTime;
-extern float lastAlertThresh;
-extern float lastAlertTemp;
+typedef struct 
+{
+  String lastShutdownTime;
+  String lastShutdownDate;
+  String lastShutdownTimezone;
+  uint64_t lastShutdownRuntime;
+
+  String lastTempAlertTime;
+  String lastTempAlertDate;
+  float lastTempAlertThresh;
+  float lastTempAlertTemp;
+}StarlinkFob_TimestampState_t;
+
+typedef struct
+{
+  TaskHandle_t countdown;
+  TaskHandle_t screenWatch;
+  TaskHandle_t screenUpdate;
+  TaskHandle_t buttonWatch;
+  TaskHandle_t dataUpdate;
+  TaskHandle_t wifiWatch;
+}StarlinkFob_TaskState_t;
+
+typedef struct 
+{
+  bool booting;
+  StarlinkFob_WifiState_t wifi;
+  StarlinkFob_HttpServerState_t servers;
+  StarlinkFob_RouterState_t routers;
+  StarlinkFob_SensorState_t sensors;
+  StarlinkFob_ButtonState_t buttons;
+  StarlinkFob_TimestampState_t timestamps;
+  StarlinkFob_TaskState_t tasks;
+  Minu menu;
+  /// @brief List of targets to be pinged
+  std::vector<PingTarget> pingTargets;
+}StarlinkFob_GlobalState_t;
+
+extern StarlinkFob_GlobalState_t fob;
 
 /// @brief Overwrite user credentials in runtime variables with their hard-coded default values 
 void resetPreferences();

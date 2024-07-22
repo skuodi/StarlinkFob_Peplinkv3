@@ -8,8 +8,7 @@
 #include "utils.h"
 #include "config.h"
 
-extern WebServer httpServer;
-File fsUploadFile;
+static File fsUploadFile;
 
 /// @brief HTML content sent when the root URI of the webserver is requested
 static const char indexPage[] =
@@ -251,7 +250,7 @@ static bool handleFileRead(String path)
 
   if(path == "/index.html")
   {
-    httpServer.send(200, "text/html", indexPage);
+    fob.servers.httpServer.send(200, "text/html", indexPage);
     return true;
   }
   else if (exists(pathWithGz) || exists(path))
@@ -260,7 +259,7 @@ static bool handleFileRead(String path)
       path += ".gz";
 
     File file = SPIFFS.open(path, "r");
-    httpServer.streamFile(file, contentType);
+    fob.servers.httpServer.streamFile(file, contentType);
     file.close();
     return true;
   }
@@ -276,38 +275,38 @@ static void unpackSettings(const char* json)
   JsonDocument settingsDoc;
   deserializeJson(settingsDoc, json);
 
-  wifi1Ssid = settingsDoc["wifi1ssid"].as<String>();
-  wifi1Password = settingsDoc["wifi1password"].as<String>();
-  wifi2Ssid = settingsDoc["wifi2ssid"].as<String>();
-  wifi2Password = settingsDoc["wifi2password"].as<String>();
-  wifiSsidSoftAp = settingsDoc["wifissidsoftap"].as<String>();
-  wifiPasswordSoftAp = settingsDoc["wifipasswordsoftap"].as<String>();
-  routerIP = settingsDoc["ip"].as<String>();
-  routerPort = settingsDoc["port"].as<int>();
-  routerUsername = settingsDoc["username"].as<String>();
-  routerPassword = settingsDoc["password"].as<String>();
-  routerClientName = settingsDoc["clientname"].as<String>();
-  routerClientScope = ((settingsDoc["clientscope"].as<String>() == "read-write") ? CLIENT_SCOPE_READ_WRITE : CLIENT_SCOPE_READ_ONLY);
-  wifiTimeoutMs = settingsDoc["wifitimeout"].as<int>();
+  fob.wifi.ssidStaPrimary = settingsDoc["wifi1ssid"].as<String>();
+  fob.wifi.passwordStaPrimary = settingsDoc["wifi1password"].as<String>();
+  fob.wifi.ssidStaSecondary = settingsDoc["wifi2ssid"].as<String>();
+  fob.wifi.passwordStaSecondary = settingsDoc["wifi2password"].as<String>();
+  fob.wifi.ssidSoftAp = settingsDoc["wifissidsoftap"].as<String>();
+  fob.wifi.passwordSoftAp = settingsDoc["wifipasswordsoftap"].as<String>();
+  fob.routers.ip = settingsDoc["ip"].as<String>();
+  fob.routers.port = settingsDoc["port"].as<int>();
+  fob.routers.username = settingsDoc["username"].as<String>();
+  fob.routers.password = settingsDoc["password"].as<String>();
+  fob.routers.clientName = settingsDoc["clientname"].as<String>();
+  fob.routers.clientScope = ((settingsDoc["clientscope"].as<String>() == "read-write") ? CLIENT_SCOPE_READ_WRITE : CLIENT_SCOPE_READ_ONLY);
+  fob.wifi.timeoutMs = settingsDoc["wifitimeout"].as<int>();
 
 }
 
 /// @brief Set URI handlers and start the HTTP server
 void startHttpServer()
 {
-  httpServer.on("/settings", HTTP_POST, []()
+  fob.servers.httpServer.on("/settings", HTTP_POST, []()
   {
-    if(httpServer.args() == 0)
+    if(fob.servers.httpServer.args() == 0)
       return;
 
 #ifdef WEBSERVER_DEBUG_LOG
-    int args = httpServer.args();
+    int args = fob.servers.httpServer.args();
     Serial.printf("Server has %d args:\n", args);
     for(int i  = 0; i < args; i++)
-      Serial.printf("Arg %s: %s\n", httpServer.argName(i).c_str(), httpServer.arg(i).c_str());
+      Serial.printf("Arg %s: %s\n", fob.servers.httpServer.argName(i).c_str(), fob.servers.httpServer.arg(i).c_str());
 #endif
 
-    unpackSettings(httpServer.arg("plain").c_str());
+    unpackSettings(fob.servers.httpServer.arg("plain").c_str());
 
 #ifdef WEBSERVER_DEBUG_LOG
     Serial.println("Got new preferences from web interface: ");
@@ -346,19 +345,19 @@ void startHttpServer()
           <h1>New Settings</h1>
           <p>)rawliteral") +
 
-    String("Router1 SSID : " + wifi1Ssid + String("<br>")) +
-    String("Router1 Password :" + wifi1Password + String("<br>")) +
-    String("Router2 SSID : " + wifi2Ssid + String("<br>")) +
-    String("Router2 Password :" + wifi2Password + String("<br>")) +
-    String("SoftAP SSID : " + wifiSsidSoftAp + String("<br>")) +
-    String("SoftAP Password :" + wifiPasswordSoftAp + String("<br>")) +
-    String("Router IP : " + routerIP + String("<br>")) +
-    String("Router Port : " + String(routerPort) + String("<br>")) +
-    String("Router API Username : " + routerUsername + String("<br>")) +
-    String("Router API Password : " + routerPassword + String("<br>")) +
-    String("Router Client Name : " + routerClientName + String("<br>")) +
-    String("Router Client Scope : " + String((routerClientScope == CLIENT_SCOPE_READ_WRITE)?"read-write":"read-only") + String("<br>")) +
-    String("Wi-Fi connect timeout : " + String(wifiTimeoutMs) + String("<br>")) +
+    String("Router1 SSID : " + fob.wifi.ssidStaPrimary + String("<br>")) +
+    String("Router1 Password :" + fob.wifi.passwordStaPrimary + String("<br>")) +
+    String("Router2 SSID : " + fob.wifi.ssidStaSecondary + String("<br>")) +
+    String("Router2 Password :" + fob.wifi.passwordStaSecondary + String("<br>")) +
+    String("SoftAP SSID : " + fob.wifi.ssidSoftAp + String("<br>")) +
+    String("SoftAP Password :" + fob.wifi.passwordSoftAp + String("<br>")) +
+    String("Router IP : " + fob.routers.ip + String("<br>")) +
+    String("Router Port : " + String(fob.routers.port) + String("<br>")) +
+    String("Router API Username : " + fob.routers.username + String("<br>")) +
+    String("Router API Password : " + fob.routers.password + String("<br>")) +
+    String("Router Client Name : " + fob.routers.clientName + String("<br>")) +
+    String("Router Client Scope : " + String((fob.routers.clientScope == CLIENT_SCOPE_READ_WRITE)?"read-write":"read-only") + String("<br>")) +
+    String("Wi-Fi connect timeout : " + String(fob.wifi.timeoutMs) + String("<br>")) +
 
     String(R"rawliteral(
           </p>
@@ -369,38 +368,38 @@ void startHttpServer()
     // Save new preferences to NVS
     if (savePreferences())
     {
-      httpServer.send(200, "text/html", responsePage.c_str());
+      fob.servers.httpServer.send(200, "text/html", responsePage.c_str());
       ESP.restart();
     }
     else
-      httpServer.send(500, "text/plain", "Couldn't set Parameters");
+      fob.servers.httpServer.send(500, "text/plain", "Couldn't set Parameters");
 
   });
 
   // Called when the current user-define preferences are requested
-  httpServer.on("/settings", HTTP_GET, []()
+  fob.servers.httpServer.on("/settings", HTTP_GET, []()
   {
     String json = "{";
-    json += "\"wifi1ssid\":\"" + wifi1Ssid;
-    json += "\",\"wifi1password\":\"" + wifi1Password;
-    json += "\",\"wifi2ssid\":\"" + wifi2Ssid;
-    json += "\",\"wifi2password\":\"" + wifi2Password;
-    json += "\",\"wifissidsoftap\":\"" + wifiSsidSoftAp;
-    json += "\",\"wifipasswordsoftap\":\"" + wifiPasswordSoftAp;
-    json += "\",\"ip\":\"" + routerIP;
-    json += "\",\"port\":\"" + String(routerPort);
-    json += "\",\"username\":\"" + routerUsername;
-    json += "\",\"password\":\"" + routerPassword;
-    json += "\",\"clientname\":\"" + routerClientName;
-    json += "\",\"clientscope\":\"" + String((routerClientScope == CLIENT_SCOPE_READ_WRITE) ? "read-write" : "read-only");
-    json += "\",\"wifitimeout\":\"" + String(wifiTimeoutMs);
+    json += "\"wifi1ssid\":\"" + fob.wifi.ssidStaPrimary;
+    json += "\",\"wifi1password\":\"" + fob.wifi.passwordStaPrimary;
+    json += "\",\"wifi2ssid\":\"" + fob.wifi.ssidStaSecondary;
+    json += "\",\"wifi2password\":\"" + fob.wifi.passwordStaSecondary;
+    json += "\",\"wifissidsoftap\":\"" + fob.wifi.ssidSoftAp;
+    json += "\",\"wifipasswordsoftap\":\"" + fob.wifi.passwordSoftAp;
+    json += "\",\"ip\":\"" + fob.routers.ip;
+    json += "\",\"port\":\"" + String(fob.routers.port);
+    json += "\",\"username\":\"" + fob.routers.username;
+    json += "\",\"password\":\"" + fob.routers.password;
+    json += "\",\"clientname\":\"" + fob.routers.clientName;
+    json += "\",\"clientscope\":\"" + String((fob.routers.clientScope == CLIENT_SCOPE_READ_WRITE) ? "read-write" : "read-only");
+    json += "\",\"wifitimeout\":\"" + String(fob.wifi.timeoutMs);
     json += "\"}";
-    httpServer.send(200, "application/json", json);
+    fob.servers.httpServer.send(200, "application/json", json);
     json = String();
   });
 
   // Called when a reboot is requested
-  httpServer.on("/reboot", HTTP_POST, []()
+  fob.servers.httpServer.on("/reboot", HTTP_POST, []()
   {
     String responsePage = String(
     R"rawliteral(
@@ -435,12 +434,12 @@ void startHttpServer()
       </html>
     )rawliteral");
 
-      httpServer.send(200, "text/html", responsePage.c_str());
+      fob.servers.httpServer.send(200, "text/html", responsePage.c_str());
       ESP.restart();
   });
   
   // Called when cookies are requested to be cleared
-  httpServer.on("/cookies", HTTP_POST, []()
+  fob.servers.httpServer.on("/cookies", HTTP_POST, []()
   {
     String responsePage = String(
     R"rawliteral(
@@ -482,15 +481,15 @@ void startHttpServer()
     {
       prefs.clear(); // Clear any currently stored cookies
       prefs.end();
-      httpServer.send(200, "text/html", responsePage.c_str());
+      fob.servers.httpServer.send(200, "text/html", responsePage.c_str());
     }
     else
-      httpServer.send(500, "text/plain", "Couldn't set Parameters");
+      fob.servers.httpServer.send(500, "text/plain", "Couldn't set Parameters");
 
   });
 
   // Called when a new router login is requested
-  httpServer.on("/login", HTTP_POST, []()
+  fob.servers.httpServer.on("/login", HTTP_POST, []()
                 {
     String responsePage = String(
     R"rawliteral(
@@ -525,29 +524,29 @@ void startHttpServer()
       </html>
     )rawliteral");
 
-    router.setIP(routerIP);
-    router.setPort(routerPort);
-    String cookie = router.begin(routerUsername, routerPassword, routerClientName, routerClientScope, false);
+    fob.routers.router.setIP(fob.routers.ip);
+    fob.routers.router.setPort(fob.routers.port);
+    String cookie = fob.routers.router.begin(fob.routers.username, fob.routers.password, fob.routers.clientName, fob.routers.clientScope, false);
     if (!cookie.length())
     {
       Serial.println("!!Router init Fail!!");
-      httpServer.send(500, "text/plain", "Couldn't log in");  
+      fob.servers.httpServer.send(500, "text/plain", "Couldn't log in");  
     }
     else
-      httpServer.send(200, "text/html", responsePage.c_str());
+      fob.servers.httpServer.send(200, "text/html", responsePage.c_str());
     
   });
 
   // Called when the requested path is not available.
-  httpServer.onNotFound([]()
+  fob.servers.httpServer.onNotFound([]()
                         {
-    if (!handleFileRead(httpServer.uri())) {
+    if (!handleFileRead(fob.servers.httpServer.uri())) {
       // This will not be executed since handleFileRead returns the index page for any unknown URI
-      httpServer.send(404, "text/plain", "FileNotFound");
+      fob.servers.httpServer.send(404, "text/plain", "FileNotFound");
     } });
 
   // Attach the HTTP update service to the HTTP server
-  httpUpdater.setup(&httpServer);
-  httpServer.begin();
+  fob.servers.updateServer.setup(&fob.servers.httpServer);
+  fob.servers.httpServer.begin(HTTP_PORT);
   Serial.println("HTTP server started");
 }

@@ -17,8 +17,7 @@
 #include "ui.h"
 #include <vector>
 
-WebServer httpServer(80);
-HTTPUpdateServer httpUpdater;
+StarlinkFob_GlobalState_t fob;
 
 static IPAddress RouterExternalIP(209,55,112,219);
 static IPAddress RouterLocalIP(192,168,50,1);
@@ -42,45 +41,9 @@ static PingTarget google = {.displayHostname="Google.com", .useIP=false, .fqn="w
 //static PingTarget linkyM5 = {.displayHostname="linkyM5stick", .useIP=true, .pingIP=linkyM5IP, .pinged=false, .pingOK=false};
 //static PingTarget linky = {.displayHostname="linky", .useIP=true, .pingIP=linkyIP, .pinged=false, .pingOK=false};
 
-std::vector<PingTarget> pingTargets;
-
-String wifi1Ssid;
-String wifi1Password;
-String wifi2Ssid;
-String wifi2Password;
-String wifiSsidSoftAp;
-String wifiPasswordSoftAp;
-String routerIP;
-uint16_t routerPort;
-String routerUsername;
-String routerPassword;
-String routerClientName;
-PeplinkAPI_ClientScope_t routerClientScope;
-long wifiTimeoutMs;
-long wifiTimestamp;
-
-String lastShutdownTime;
-String lastShutdownTimezone;
-uint64_t lastShutdownRuntime;
-
-PeplinkRouter router;
-Preferences routerPrefs;
-Preferences cookiePrefs;
-
-SHT3X sht;
-QMP6988 qmp;
-bool shtSensorAvailable;
-bool qmpSensorAvailable;
-
-String lastAlertTime;
-float lastAlertThresh;
-float lastAlertTemp;
-
-extern bool wifiTimeout;
-bool httpServerStarted = false;
-void startWiFiConnectCountdown(void *arg);
-
-#define MIN(x, y) (x < y) ? x : y
+#ifndef MIN
+  #define MIN(x, y) (x < y) ? x : y
+#endif
 
 void printText(const char *msg, uint8_t len, uint16_t fore = 0xFFFF, uint16_t back = 0x0000)
 {
@@ -134,10 +97,6 @@ void printTextInverted(const char *msg, uint8_t len, uint16_t fore = 0xFFFF, uin
   M5.Lcd.print(buff);
 }
 
-/// @brief Create the menu, defining the length of the main and auxiliary texe sections
-Minu menu(printText, printTextInverted, MINU_MAIN_TEXT_LEN, MINU_AUX_TEXT_LEN);
-
-
 void setup()
 {
   // Setup the serial terminal 
@@ -163,14 +122,22 @@ void setup()
   M5.Lcd.setTextSize(TEXT_SIZE_DEFAULT);
   M5.Lcd.setTextWrap(false, false);
 
+  /// @brief Create the menu, defining the length of the main and auxiliary texe sections
+  fob.menu.setPrintFunctions(printText, printTextInverted);
+  fob.menu.setTextLength(MINU_MAIN_TEXT_LEN, MINU_AUX_TEXT_LEN);
+
+  fob.booting = true;              // Set at boot to initiate the automated changing of pages after Wi-Fi connects
+  fob.wifi.usePrimarySsid = true;  // Whether the or the secondary SSID should be used for Wi-Fi STA connection
+  fob.wifi.timedOut = false;       // Indicates if Wi-Fi has timed out waiting for STA connection
+
   // Populate the list of network ping targets
-  pingTargets.push_back(routerExternal);
-  // pingTargets.push_back(routerLocal);
-  pingTargets.push_back(starlinkDish);
-  pingTargets.push_back(dns);
-  pingTargets.push_back(provisioning);    
-  pingTargets.push_back(starlink);
-  pingTargets.push_back(google);
+  fob.pingTargets.push_back(routerExternal);
+  // fob.pingTargets.push_back(routerLocal);
+  fob.pingTargets.push_back(starlinkDish);
+  fob.pingTargets.push_back(dns);
+  fob.pingTargets.push_back(provisioning);    
+  fob.pingTargets.push_back(starlink);
+  fob.pingTargets.push_back(google);
   
   // Uncomment the following two lines to overwrite NVS values with their defaults on boot
   // in case of first-time flash initialization or corruption recovery
@@ -204,9 +171,9 @@ void setup()
     delay(500);
   }
   Serial.println();
-  if(!httpServerStarted)
+  if(!fob.servers.started)
   {
-    httpServerStarted = true;
+    fob.servers.started = true;
     Serial.println("Starting HTTP Server");
     startHttpServer();
   }
@@ -222,18 +189,19 @@ void setup()
   configTime(GMT_OFFSET_SEC, DAYLIGHT_OFFSET_SEC, NTP_SERVER1, NTP_SERVER2);
   
   // Attempt to retrieve all information about the router and print to console on success
-  if(router.update())
+  if(fob.routers.router.update())
   {
-    printRouterInfo(router);
-    printRouterLocation(router);
-    printRouterClients(router);
-    printRouterWanStatus(router);
+    printRouterInfo(fob.routers.router);
+    printRouterLocation(fob.routers.router);
+    printRouterClients(fob.routers.router);
+    printRouterWanStatus(fob.routers.router);
   }
 }
 
 void loop()
 {
-  httpServer.handleClient();
+  if(fob.servers.started)
+    fob.servers.httpServer.handleClient();
 }
 
 void showSplashScreen()

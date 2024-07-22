@@ -569,7 +569,7 @@ String PeplinkRouter::_sendJsonRequest(PeplinkAPI_HTTPRequest_t type, String &en
     Serial.println(message);
 
     if(err == 401 && message == "Unauthorized") // If cookie expired, log in again
-      login(routerUsername.c_str(), routerPassword.c_str());
+      login(fob.routers.username.c_str(), fob.routers.password.c_str());
     else if(err == 401 && message == "Invalid access token") //If access token expired, refresh it
       _refreshToken();
 

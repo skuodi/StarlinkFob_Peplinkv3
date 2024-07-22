@@ -11,19 +11,19 @@
 
 void resetPreferences()
 {
-    wifi1Ssid = WIFI1_SSID_DEFAULT;
-    wifi1Password = WIFI1_PASSWORD_DEFAULT;
-    wifi2Ssid = WIFI2_SSID_DEFAULT;
-    wifi2Password = WIFI2_PASSWORD_DEFAULT;
-    wifiSsidSoftAp = WIFI_SSID_SOFTAP_DEFAULT;
-    wifiPasswordSoftAp = WIFI_PASSWORD_SOFTAP_DEFAULT;
-    routerIP = ROUTER_IP_DEFAULT;
-    routerPort = ROUTER_PORT_DEFAULT;
-    routerUsername = ROUTER_USERNAME_DEFAULT;
-    routerPassword = ROUTER_PASSWORD_DEFAULT;
-    routerClientName = CLIENT_NAME_DEFAULT;
-    routerClientScope = CLIENT_SCOPE_DEFAULT;
-    wifiTimeoutMs = WIFI_TIMEOUT_DEFAULT;
+    fob.wifi.ssidStaPrimary = WIFI1_SSID_DEFAULT;
+    fob.wifi.passwordStaPrimary = WIFI1_PASSWORD_DEFAULT;
+    fob.wifi.ssidStaSecondary = WIFI2_SSID_DEFAULT;
+    fob.wifi.passwordStaSecondary = WIFI2_PASSWORD_DEFAULT;
+    fob.wifi.ssidSoftAp = WIFI_SSID_SOFTAP_DEFAULT;
+    fob.wifi.passwordSoftAp = WIFI_PASSWORD_SOFTAP_DEFAULT;
+    fob.routers.ip = ROUTER_IP_DEFAULT;
+    fob.routers.port = ROUTER_PORT_DEFAULT;
+    fob.routers.username = ROUTER_USERNAME_DEFAULT;
+    fob.routers.password = ROUTER_PASSWORD_DEFAULT;
+    fob.routers.clientName = CLIENT_NAME_DEFAULT;
+    fob.routers.clientScope = CLIENT_SCOPE_DEFAULT;
+    fob.wifi.timeoutMs = WIFI_TIMEOUT_DEFAULT;
 }
 
 bool savePreferences()
@@ -31,20 +31,20 @@ bool savePreferences()
     bool ret = false;
     PeplinkAPI_Settings_t newSettings =
         {
-            .port = routerPort,
-            .clientScope = routerClientScope,
-            .wifiTimeoutMs = wifiTimeoutMs,
+            .port = fob.routers.port,
+            .clientScope = fob.routers.clientScope,
+            .wifiTimeoutMs = fob.wifi.timeoutMs,
         };
-    strncpy(newSettings.wifi1Ssid, wifi1Ssid.c_str(), sizeof(newSettings.wifi1Ssid));
-    strncpy(newSettings.wifi1Password, wifi1Password.c_str(), sizeof(newSettings.wifi1Password));
-    strncpy(newSettings.wifi2Ssid, wifi2Ssid.c_str(), sizeof(newSettings.wifi2Ssid));
-    strncpy(newSettings.wifi2Password, wifi2Password.c_str(), sizeof(newSettings.wifi2Password));
-    strncpy(newSettings.wifiSsidSoftAp, wifiSsidSoftAp.c_str(), sizeof(newSettings.wifiSsidSoftAp));
-    strncpy(newSettings.wifiPasswordSoftAp, wifiPasswordSoftAp.c_str(), sizeof(newSettings.wifiPasswordSoftAp));
-    strncpy(newSettings.ip, routerIP.c_str(), sizeof(newSettings.ip));
-    strncpy(newSettings.username, routerUsername.c_str(), sizeof(newSettings.username));
-    strncpy(newSettings.password, routerPassword.c_str(), sizeof(newSettings.password));
-    strncpy(newSettings.clientName, routerClientName.c_str(), sizeof(newSettings.clientName));
+    strncpy(newSettings.ssidStaPrimary, fob.wifi.ssidStaPrimary.c_str(), sizeof(newSettings.ssidStaPrimary));
+    strncpy(newSettings.passwordStaPrimary, fob.wifi.passwordStaPrimary.c_str(), sizeof(newSettings.passwordStaPrimary));
+    strncpy(newSettings.ssidStaSecondary, fob.wifi.ssidStaSecondary.c_str(), sizeof(newSettings.ssidStaSecondary));
+    strncpy(newSettings.passwordStaSecondary, fob.wifi.passwordStaSecondary.c_str(), sizeof(newSettings.passwordStaSecondary));
+    strncpy(newSettings.ssidSoftAp, fob.wifi.ssidSoftAp.c_str(), sizeof(newSettings.ssidSoftAp));
+    strncpy(newSettings.passwordSoftAp, fob.wifi.passwordSoftAp.c_str(), sizeof(newSettings.passwordSoftAp));
+    strncpy(newSettings.ip, fob.routers.ip.c_str(), sizeof(newSettings.ip));
+    strncpy(newSettings.username, fob.routers.username.c_str(), sizeof(newSettings.username));
+    strncpy(newSettings.password, fob.routers.password.c_str(), sizeof(newSettings.password));
+    strncpy(newSettings.clientName, fob.routers.clientName.c_str(), sizeof(newSettings.clientName));
 
     Preferences newPrefs;
     if (newPrefs.begin(PREFERENCES_NAMESPACE, false))
@@ -61,27 +61,28 @@ bool savePreferences()
 
 void dumpPreferences()
 {
-    Serial.println("Router SSID1 : " + wifi1Ssid);
-    Serial.println("Router Password1 :" + wifi1Password);
-    Serial.println("Router SSID2 : " + wifi2Ssid);
-    Serial.println("Router Password2 :" + wifi2Password);
-    Serial.println("Soft AP SSID : " + wifiSsidSoftAp);
-    Serial.println("Soft AP Password :" + wifiPasswordSoftAp);
-    Serial.println("Router IP : " + routerIP);
-    Serial.println("Router Port : " + String(routerPort));
-    Serial.println("Router API Username : " + routerUsername);
-    Serial.println("Router API Password : " + routerPassword);
-    Serial.println("Router Client Name : " + routerClientName);
+    Serial.println("Router SSID1 : " + fob.wifi.ssidStaPrimary);
+    Serial.println("Router Password1 :" + fob.wifi.passwordStaPrimary);
+    Serial.println("Router SSID2 : " + fob.wifi.ssidStaSecondary);
+    Serial.println("Router Password2 :" + fob.wifi.passwordStaSecondary);
+    Serial.println("Soft AP SSID : " + fob.wifi.ssidSoftAp);
+    Serial.println("Soft AP Password :" + fob.wifi.passwordSoftAp);
+    Serial.println("Router IP : " + fob.routers.ip);
+    Serial.println("Router Port : " + String(fob.routers.port));
+    Serial.println("Router API Username : " + fob.routers.username);
+    Serial.println("Router API Password : " + fob.routers.password);
+    Serial.println("Router Client Name : " + fob.routers.clientName);
     Serial.print("Router Client Scope : ");
-    if (routerClientScope == CLIENT_SCOPE_READ_WRITE)
+    if (fob.routers.clientScope == CLIENT_SCOPE_READ_WRITE)
         Serial.println("read-write");
     else
         Serial.println("read-only");
-    Serial.println("Wi-Fi connect timeout : " + String(wifiTimeoutMs));
+    Serial.println("Wi-Fi connect timeout : " + String(fob.wifi.timeoutMs));
 }
 
 void retrieveStoredCredentials()
 {
+    Preferences cookiePrefs;
     if (cookiePrefs.begin(COOKIES_NAMESPACE))
     {
         size_t cookieJarSize = cookiePrefs.getBytesLength(COOKIES_NAMESPACE);
@@ -94,10 +95,10 @@ void retrieveStoredCredentials()
             PeplinkAPI_CookieJar_t *jar = (PeplinkAPI_CookieJar_t *)cookieBuffer;
             if (jar->magic == 0xDEADBEEF) // If the cookie jar is valid, extract the cookie
             {
-                router.setCookie(String(jar->cookie));
+                fob.routers.router.setCookie(String(jar->cookie));
                 Serial.print("Got cookie from storage: ");
                 Serial.println(jar->cookie);
-                router.setToken(String(jar->token));
+                fob.routers.router.setToken(String(jar->token));
                 Serial.print("Got token from storage: ");
                 Serial.println(jar->token);
             }
@@ -109,6 +110,7 @@ void retrieveStoredCredentials()
 void restorePreferences()
 {
     resetPreferences();
+    Preferences routerPrefs;
 
     if (routerPrefs.begin(PREFERENCES_NAMESPACE))
     {
@@ -120,25 +122,25 @@ void restorePreferences()
         if (settingsSize % sizeof(PeplinkAPI_Settings_t) == 0)
         {
             PeplinkAPI_Settings_t *settings = (PeplinkAPI_Settings_t *)settingsBuffer;
-            if (String(settings->wifi1Ssid).length() && String(settings->wifi2Ssid).length() &&
-            String(settings->wifiSsidSoftAp).length() && String(settings->ip).length() &&
+            if (String(settings->ssidStaPrimary).length() && String(settings->ssidStaSecondary).length() &&
+            String(settings->ssidSoftAp).length() && String(settings->ip).length() &&
             String(settings->port).length() && String(settings->username).length() &&
             String(settings->password).length() && String(settings->clientName).length()
             )
             {
-                wifi1Ssid = settings->wifi1Ssid;
-                wifi1Password = settings->wifi1Password;
-                wifi2Ssid = settings->wifi2Ssid;
-                wifi2Password = settings->wifi2Password;
-                wifiSsidSoftAp = settings->wifiSsidSoftAp;
-                wifiPasswordSoftAp = settings->wifiPasswordSoftAp;
-                routerIP = settings->ip;
-                routerPort = settings->port;
-                routerUsername = settings->username;
-                routerPassword = settings->password;
-                routerClientName = settings->clientName;
-                routerClientScope = settings->clientScope;
-                wifiTimeoutMs = settings->wifiTimeoutMs;
+                fob.wifi.ssidStaPrimary = settings->ssidStaPrimary;
+                fob.wifi.passwordStaPrimary = settings->passwordStaPrimary;
+                fob.wifi.ssidStaSecondary = settings->ssidStaSecondary;
+                fob.wifi.passwordStaSecondary = settings->passwordStaSecondary;
+                fob.wifi.ssidSoftAp = settings->ssidSoftAp;
+                fob.wifi.passwordSoftAp = settings->passwordSoftAp;
+                fob.routers.ip = settings->ip;
+                fob.routers.port = settings->port;
+                fob.routers.username = settings->username;
+                fob.routers.password = settings->password;
+                fob.routers.clientName = settings->clientName;
+                fob.routers.clientScope = settings->clientScope;
+                fob.wifi.timeoutMs = settings->wifiTimeoutMs;
                 Serial.println("Got preferences from storage");
                 dumpPreferences();
             }
@@ -168,9 +170,9 @@ void retrieveLastShutdownInfo()
             timePrefs.getBytes(TIMESTAMP_NAMESPACE, timestampBuffer,  sizeof(ShutdownTimestamp_t));
             timePrefs.end();
             ShutdownTimestamp_t *timestamp = (ShutdownTimestamp_t*)timestampBuffer;
-            lastShutdownRuntime = timestamp->lastShutdownRuntime;
-            lastShutdownTime = timestamp->lastShutdownTime;
-            lastShutdownTimezone = timestamp->lastShutdownTimezone;
+            fob.timestamps.lastShutdownRuntime = timestamp->lastShutdownRuntime;
+            fob.timestamps.lastShutdownTime = timestamp->lastShutdownTime;
+            fob.timestamps.lastShutdownTimezone = timestamp->lastShutdownTimezone;
             Serial.println("Got shutdown details:");
             Serial.printf("\tRuntime: %"PRId64"\n", timestamp->lastShutdownRuntime);
             Serial.printf("\tTime: %s\n", timestamp->lastShutdownTime);
@@ -192,13 +194,13 @@ void retrieveLastAlertInfo()
             alertPrefs.getBytes(TEMPERATURE_ALERT_NAMESPACE, timestampBuffer,  sizeof(AlertTimestamp_t));
             alertPrefs.end();
             AlertTimestamp_t *timestamp = (AlertTimestamp_t*)timestampBuffer;
-            lastAlertTime = timestamp->lastAlertTime;
-            lastAlertTemp = timestamp->lastAlertTemp;
-            lastAlertThresh = timestamp->lastAlertThresh;
+            fob.timestamps.lastTempAlertTime = timestamp->lastTempAlertTime;
+            fob.timestamps.lastTempAlertTemp = timestamp->lastTempAlertTemp;
+            fob.timestamps.lastTempAlertThresh = timestamp->lastTempAlertThresh;
             Serial.println("Got last temp alert details:");
-            Serial.printf("\tTime: %s\n", timestamp->lastAlertTime);
-            Serial.printf("\tTemp: %fF\n",  timestamp->lastAlertTemp);
-            Serial.printf("\tThresh: %fF\n",  timestamp->lastAlertThresh);
+            Serial.printf("\tTime: %s\n", timestamp->lastTempAlertTime);
+            Serial.printf("\tTemp: %fF\n",  timestamp->lastTempAlertTemp);
+            Serial.printf("\tThresh: %fF\n",  timestamp->lastTempAlertThresh);
         }
     }
     alertPrefs.end();
