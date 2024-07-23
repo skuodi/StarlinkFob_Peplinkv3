@@ -45,6 +45,10 @@ static PingTarget google = {.displayHostname="Google.com", .useIP=false, .fqn="w
   #define MIN(x, y) (x < y) ? x : y
 #endif
 
+#define BTNA_PIN 37
+#define BTNB_PIN 39
+#define BTNC_PIN 35
+
 void printText(const char *msg, uint8_t len, uint16_t fore = 0xFFFF, uint16_t back = 0x0000)
 {
   // Check that the message and message length are valid
@@ -97,6 +101,46 @@ void printTextInverted(const char *msg, uint8_t len, uint16_t fore = 0xFFFF, uin
   M5.Lcd.print(buff);
 }
 
+void IRAM_ATTR btnAPressed()
+{
+  delay(50);
+  if(fob.buttons.isPressedA)
+    fob.buttons.pressDurationA = millis() - fob.buttons.lastPressTimeA;
+  else
+  {
+    fob.buttons.lastPressTimeA = millis();
+    fob.buttons.pressDurationA = 0;
+  }
+
+  fob.buttons.isPressedA = !fob.buttons.isPressedA;
+}
+
+void IRAM_ATTR btnBPressed()
+{
+  if(fob.buttons.isPressedB)
+    fob.buttons.pressDurationB = millis() - fob.buttons.lastPressTimeB;
+  else
+  {
+    fob.buttons.lastPressTimeB = millis();
+    fob.buttons.pressDurationB = 0;
+  }
+
+  fob.buttons.isPressedB = !fob.buttons.isPressedB;
+}
+
+void IRAM_ATTR btnCPressed()
+{
+  if(fob.buttons.isPressedC)
+    fob.buttons.pressDurationC = millis() - fob.buttons.lastPressTimeC;
+  else
+  {
+    fob.buttons.lastPressTimeC = millis();
+    fob.buttons.pressDurationC = 0;
+  }
+
+  fob.buttons.isPressedC = !fob.buttons.isPressedC;
+}
+
 void setup()
 {
   // Setup the serial terminal 
@@ -108,6 +152,19 @@ void setup()
   // Initialize the global M5 API object for the M5StickCPlus2
   auto cfg = M5.config();
   StickCP2.begin(cfg);
+
+  fob.buttons.pressDurationA = 0;
+  fob.buttons.pressDurationB = 0;
+  fob.buttons.pressDurationC = 0;
+
+  pinMode(BTNA_PIN, INPUT);
+  attachInterrupt(BTNA_PIN, btnAPressed, CHANGE);
+
+  pinMode(BTNB_PIN, INPUT);
+  attachInterrupt(BTNB_PIN, btnBPressed, CHANGE);
+
+  pinMode(BTNC_PIN, INPUT);
+  attachInterrupt(BTNC_PIN, btnCPressed, CHANGE);
 
   // Set the orientation of the screen
   M5.Lcd.setRotation(1);
@@ -189,13 +246,13 @@ void setup()
   configTime(GMT_OFFSET_SEC, DAYLIGHT_OFFSET_SEC, NTP_SERVER1, NTP_SERVER2);
   
   // Attempt to retrieve all information about the router and print to console on success
-  if(fob.routers.router.update())
-  {
-    printRouterInfo(fob.routers.router);
-    printRouterLocation(fob.routers.router);
-    printRouterClients(fob.routers.router);
-    printRouterWanStatus(fob.routers.router);
-  }
+  // if(fob.routers.router.update())
+  // {
+  //   printRouterInfo(fob.routers.router);
+  //   printRouterLocation(fob.routers.router);
+  //   printRouterClients(fob.routers.router);
+  //   printRouterWanStatus(fob.routers.router);
+  // }
 }
 
 void loop()

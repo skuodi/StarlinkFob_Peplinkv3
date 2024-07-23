@@ -126,14 +126,17 @@ typedef enum
 typedef struct 
 {
   int32_t pressDurationA;
+  uint64_t lastPressTimeA;
   StarlinkFob_ButtonPress_t btnPressA;
   bool isPressedA;
 
   int32_t pressDurationB;
+  uint64_t lastPressTimeB;
   StarlinkFob_ButtonPress_t btnPressB;
   bool isPressedB;
 
   int32_t pressDurationC;
+  uint64_t lastPressTimeC;
   StarlinkFob_ButtonPress_t btnPressC;
   bool isPressedC;
 }StarlinkFob_ButtonState_t;

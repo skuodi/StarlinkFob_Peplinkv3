@@ -12,11 +12,11 @@
 
 // Uncomment the following line to enable verbose debug logging
 // #define ENABLE_VERBOSE_DEBUG_LOG
-#ifdef ENABLE_VERBOSE_DEBUG_LOG
-#define PEPLINK_DEBUG_LOG
+// #ifdef ENABLE_VERBOSE_DEBUG_LOG
+// #define PEPLINK_DEBUG_LOG
 #define UI_DEBUG_LOG
-#define WEBSERVER_DEBUG_LOG
-#endif
+// #define WEBSERVER_DEBUG_LOG
+// #endif
 
 // Uncomment the following line to enable beeping on every button press
 // #define UI_BEEP
