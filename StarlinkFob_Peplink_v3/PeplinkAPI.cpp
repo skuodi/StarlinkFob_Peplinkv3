@@ -500,6 +500,36 @@ bool PeplinkRouter::getWanStatus()
     else
       Serial.println("Unsupported WAN type: " + wanType);
   }
+
+  // Rearrange the WAN list based on priority
+  if(this->_wan.size() > 1)
+  {
+    size_t wanCount = _wan.size();
+    size_t currentWanPriority = 1;
+
+    for(size_t i = 0; i < wanCount; ++i)
+    {
+      for(size_t j = 0; j < wanCount; ++j)
+      {
+        if(_wan[i]->priority == currentWanPriority)
+        {
+          _wan.push_back(_wan[i]);
+          break;
+        }
+      }
+      currentWanPriority++;
+    }
+
+    // Append the rest of the WANs with no priority assigned
+    for(size_t i = 0; i < wanCount; ++i)
+      if(_wan[i]->priority == 0)
+        _wan.push_back(_wan[i]);
+
+    // Erase the old list
+    for(size_t i = 0; i < wanCount; i++)
+      _wan.erase(_wan.begin());
+
+  }
   getWanTraffic();
   return true;
 }
