@@ -27,7 +27,7 @@
   - [1. HTTPS ignore certificate CN verification](#1-https-ignore-certificate-cn-verification)
 - [Peplink](#peplink)
   - [1. Loading indication](#1-loading-indication)
-  - [2. WAN list sort by priority](#2-wan-list-sort-by-priority)
+  - [x] [2. WAN list sort by priority](#2-wan-list-sort-by-priority)
   - [3. SIM List page](#3-sim-list-page)
   - [4. WAN status PAGE](#4-wan-status-page)
   - [5. WAN summary page display](#5-wan-summary-page-display)
@@ -283,6 +283,8 @@ Look at the json returned from the api/status.wan.connection display the wan lis
 If a wan has the same priority, then display them in the order based first on priority, and second on the array list.
 This should re-sort the order when on the WAN summary screen.
 ```
+
+- Added to the `getWanStatus()` function.
 
 ### 3. SIM List page
 ```
