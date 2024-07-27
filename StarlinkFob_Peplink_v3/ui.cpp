@@ -707,10 +707,14 @@ void showSimList(void *arg)
     {
       std::vector<PeplinkAPI_WAN_Cellular_SIM> &simList = ((PeplinkAPI_WAN_Cellular *)wan)->simCards;
         ssize_t thisItem;
+      String simName = String();
 
       for (auto it = 0; it < simList.size(); ++it)
       {
-          thisItem = fob.menu.pages()[simListPageId]->addItem(goToSimInfoPage, String("SIM" + String(it)).c_str(), " ");
+        char simId = it + 'A';
+        simName = "SIM " + String(simId);
+        simName += (simList[it].detected && simList[it].active) ? String(" (Active)") : String();
+        thisItem = fob.menu.pages()[simListPageId]->addItem(goToSimInfoPage, simName.c_str(), " ");
         
         if(!simList[it].detected)
             fob.menu.pages()[simListPageId]->items()[thisItem].setAuxTextBackground(TFT_GREY);
@@ -759,7 +763,14 @@ void showSimInfo(void* arg = NULL)
         M5.Lcd.println("No SIM found!");
         return;
       }
-      M5.Lcd.printf("Name  :SIM%d\n", lastSelectedSim);
+      M5.Lcd.printf("Name  :SIM %c\n", lastSelectedSim + 'A');
+      if(!simList[lastSelectedSim].detected)
+      {
+        M5.Lcd.setTextColor(RED, BLACK);
+        M5.Lcd.println(" (No Sim Detected)");
+        M5.Lcd.setTextColor(MINU_FOREGROUND_COLOUR_DEFAULT, MINU_BACKGROUND_COLOUR_DEFAULT);
+        break;
+      }
       M5.Lcd.printf("Active:%s\n", simList[lastSelectedSim].active ? "true" : "false");
       M5.Lcd.printf("ICCID :%s\n", simList[lastSelectedSim].iccid.c_str());  
       break;

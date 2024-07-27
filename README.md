@@ -28,7 +28,7 @@
 - [Peplink](#peplink)
   - [1. Loading indication](#1-loading-indication)
   - [x] [2. WAN list sort by priority](#2-wan-list-sort-by-priority)
-  - [3. SIM List page](#3-sim-list-page)
+  - [x] [3. SIM List page](#3-sim-list-page)
   - [4. WAN status PAGE](#4-wan-status-page)
   - [5. WAN summary page display](#5-wan-summary-page-display)
   - [6. Cellular signal indicator](#6-cellular-signal-indicator)
@@ -297,6 +297,8 @@ SIM LIST Page
  When going into the details of the sim if no sim detected display
  (No Sim Detected)
 ```
+
+- Implemented with red font for `(No Sim Detected)`
 
 ### 4. WAN status PAGE
 
