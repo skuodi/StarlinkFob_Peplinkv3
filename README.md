@@ -30,7 +30,7 @@
   - [x] [2. WAN list sort by priority](#2-wan-list-sort-by-priority)
   - [x] [3. SIM List page](#3-sim-list-page)
   - [4. WAN status PAGE](#4-wan-status-page)
-  - [5. WAN summary page display](#5-wan-summary-page-display)
+  - [x] [5. WAN summary page display](#5-wan-summary-page-display)
   - [6. Cellular signal indicator](#6-cellular-signal-indicator)
   - [7. Add router reboot option](#7-add-router-reboot-option)
 
@@ -327,6 +327,7 @@ WAN summary page display
  IF "managementOnly": False keep black space icon. before displaying the name of the wan.
 
 ```
+- Done
 
 ### 6. Cellular signal indicator
 ```

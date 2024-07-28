@@ -6,6 +6,7 @@
 #include "ui.h"
 #include "utils.h"
 #include "config.h"
+#include "logo.h"
 
 #if CONFIG_FREERTOS_UNICORE
 #define ARDUINO_RUNNING_CORE 0
@@ -447,14 +448,16 @@ void printRouterWanStatus(void* arg = NULL)
 {
   Serial.println("Getting WAN list - ");
   M5.Lcd.setCursor(0, 0, 1);
-  M5.Lcd.println("Getting WAN list");
+  M5.Lcd.println("_____WAN SUMMARY____");
 
   const int cursorX = M5.Lcd.getCursorX();
   const int cursorY = M5.Lcd.getCursorY();
+  M5.Lcd.drawBitmap(200, cursorY, 40, 40, loading, 0);
 
   if (!fob.routers.router.isAvailable() || !fob.routers.router.getWanStatus())
   {
     M5.Lcd.setCursor(cursorX, cursorY);
+    M5.Lcd.fillRect(0, cursorY, M5.Lcd.width(), M5.Lcd.height() - cursorY, MINU_BACKGROUND_COLOUR_DEFAULT);
     M5.Lcd.setTextColor(RED, BLACK);
     M5.Lcd.println("Unavailable!");
     M5.Lcd.setTextColor(MINU_FOREGROUND_COLOUR_DEFAULT, MINU_BACKGROUND_COLOUR_DEFAULT);
@@ -462,7 +465,7 @@ void printRouterWanStatus(void* arg = NULL)
   }
   else
   {
-    M5.Lcd.clear();
+    M5.Lcd.fillRect(0, cursorY, M5.Lcd.width(), M5.Lcd.height() - cursorY, MINU_BACKGROUND_COLOUR_DEFAULT);
     M5.Lcd.setCursor(cursorX, cursorY);
     std::vector<PeplinkAPI_WAN *> wanList = fob.routers.router.wanStatus();
     Serial.println(String(wanList.size()) + " elements:");
@@ -485,9 +488,19 @@ void printRouterWanStatus(void* arg = NULL)
           M5.Lcd.setTextColor(TFT_BLACK, TFT_WHITE);
         M5.Lcd.print(" ");
         // M5.Lcd.print(wan->name);
-        M5.Lcd.setTextColor(TFT_WHITE, TFT_BLACK);
-        M5.Lcd.print(" " + wan->name + "\n");
-        M5.Lcd.println("" + wan->status);
+        if(wan->managementOnly)
+        {
+          M5.Lcd.setTextColor(TFT_WHITE, TFT_ORANGE);
+          M5.Lcd.print("+");
+          M5.Lcd.setTextColor(TFT_WHITE, TFT_BLACK);
+          M5.Lcd.println(" " + wan->name);
+        }
+        else
+        {
+          M5.Lcd.setTextColor(TFT_WHITE, TFT_BLACK);
+          M5.Lcd.println("  " + wan->name);
+        }
+        M5.Lcd.println(wan->status);
         // M5.Lcd.print(wan->name +" " + wan->status + "\n");
       }
       else
@@ -495,8 +508,18 @@ void printRouterWanStatus(void* arg = NULL)
         // M5.Lcd.print(wan->name +" " + wan->statusLED +" " + wan->status + "\n");
         M5.Lcd.setTextColor(TFT_BLACK, TFT_GREY);
         M5.Lcd.print(" ");
-        M5.Lcd.setTextColor(TFT_WHITE, TFT_BLACK);
-        M5.Lcd.print(" " + wan->name + "\n");
+        if(!wan->managementOnly)
+        {
+          M5.Lcd.setTextColor(TFT_WHITE, TFT_ORANGE);
+          M5.Lcd.print("+");
+          M5.Lcd.setTextColor(TFT_WHITE, TFT_BLACK);
+          M5.Lcd.println(" " + wan->name);
+        }
+        else
+        {
+          M5.Lcd.setTextColor(TFT_WHITE, TFT_BLACK);
+          M5.Lcd.println("  " + wan->name);
+        }
         // M5.Lcd.setTextColor(TFT_BLACK,TFT_WHITE);
         // M5.Lcd.print(wan->name);
         // M5.Lcd.print(" " + wan->status + "\n");
@@ -519,7 +542,11 @@ void printRouterWanStatus(void* arg = NULL)
           Serial.printf("\trssi: %d\n" + ((PeplinkAPI_WAN_Cellular *)wan)->rssi);
           if (((PeplinkAPI_WAN_Cellular *)wan)->carrier != "")
           {
-            M5.Lcd.print("" + ((PeplinkAPI_WAN_Cellular *)wan)->carrier + " " + ((PeplinkAPI_WAN_Cellular *)wan)->networkType + " Bars:" + ((PeplinkAPI_WAN_Cellular *)wan)->signalLevel + "\n");
+            M5.Lcd.print(((PeplinkAPI_WAN_Cellular *)wan)->carrier + " " );
+            M5.Lcd.setTextColor(TFT_WHITE, TFT_BLUE);
+            M5.Lcd.print(((PeplinkAPI_WAN_Cellular *)wan)->networkType);
+            M5.Lcd.setTextColor(TFT_WHITE, TFT_BLACK);
+            M5.Lcd.println(" Bars:" + String(((PeplinkAPI_WAN_Cellular *)wan)->signalLevel));
           }
           printSimCards(((PeplinkAPI_WAN_Cellular *)wan)->simCards);
         }

@@ -68,6 +68,7 @@ public:
     String unit;        // Unit used for upload/download bandwidth
     int priority;
     PeplinkAPI_WANType_t type;
+    bool managementOnly;
 };
 
 /// @brief SIM slot information for cellular wan

@@ -620,6 +620,7 @@ PeplinkAPI_WAN_Ethernet PeplinkRouter::_parseEthernetWAN(String& wanInfo)
   wan.status = wanDoc["message"].as<String>();
   wan.statusLED = wanDoc["statusLed"].as<String>();
   wan.priority = wanDoc["priority"].as<int>();
+  wan.managementOnly = wanDoc["managementOnly"].as<bool>();
 
   if (wan.status == "Disabled")
     return wan;
