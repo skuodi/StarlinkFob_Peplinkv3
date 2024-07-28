@@ -866,7 +866,10 @@ void cancelWiFiSetup(void *arg)
 {
   fob.wifi.usePrimarySsid = true;
   WiFi.mode(WIFI_MODE_NULL);
-  fob.menu.goToPage(lastVisitedPageId);
+  if(fob.booting || lastVisitedPageId == countdownPageId)
+    fob.menu.goToPage(homePageId);
+  else
+    fob.menu.goToPage(lastVisitedPageId);
 }
 
 /// @brief Save the selected SSID as primary or secondary
@@ -1272,12 +1275,25 @@ void screenWatchTask(void *arg)
       fob.buttons.btnPressB = STARLINKFOB_BUTTONPRESS_NONE;
     }
 
+    if (fob.buttons.btnPressC == STARLINKFOB_BUTTONPRESS_SHORT)
+    {
+      if(!fob.booting && lastVisitedPageId != countdownPageId && lastVisitedPageId != scanResultPageId)
+      {
+        size_t tmp = lastSelectedPage;
+        lastSelectedPage = fob.menu.currentPageId();
+        fob.menu.goToPage(tmp);
+      }
+
+      fob.buttons.btnPressC = STARLINKFOB_BUTTONPRESS_NONE;
+    }
+
     // If the current page has changed, log the change
     if (lastSelectedPage != fob.menu.currentPageId())
     {
 #ifdef UI_DEBUG_LOG
       Serial.printf("Changed from page %d to page %d\n", lastSelectedPage, fob.menu.currentPageId());
 #endif
+      lastVisitedPageId = lastSelectedPage;
       lastSelectedPage = fob.menu.currentPageId();
       lastHighlightedItem = fob.menu.currentPage()->highlightedIndex();
     }
@@ -1322,17 +1338,30 @@ void buttonWatchTask(void *arg)
 
   long lastStackCheckTime = 0;
   long currentTime = 0;
+  bool beepA = true;
+  bool beepB = true;
 
   for (;;)
   {
     M5.update();
     currentTime = millis();
     if (M5.BtnA.wasPressed())
-      fob.buttons.pressDurationA = currentTime;
+    {
+      fob.buttons.lastPressTimeA = currentTime;
+      fob.buttons.isPressedA = true;
+    }
+    
+    if(fob.buttons.isPressedA && beepA && (currentTime - fob.buttons.lastPressTimeA) >= LONG_PRESS_THRESHOLD_MS)
+    {
+      beepA = false;
+      M5.Speaker.tone(9000, 50);
+    }
 
     if (M5.BtnA.wasReleased())
     {
-      if (fob.buttons.pressDurationA + LONG_PRESS_THRESHOLD_MS < currentTime)
+      fob.buttons.isPressedA = false;
+      fob.buttons.pressDurationA = currentTime - fob.buttons.lastPressTimeA;
+      if (fob.buttons.pressDurationA > LONG_PRESS_THRESHOLD_MS)
       {
         fob.buttons.btnPressA = STARLINKFOB_BUTTONPRESS_LONG;
 #ifdef UI_DEBUG_LOG
@@ -1347,16 +1376,28 @@ void buttonWatchTask(void *arg)
 #endif
       }
 #ifdef UI_DEBUG_LOG
-      Serial.printf(" press A: %lums\n", currentTime - fob.buttons.pressDurationA);
+      Serial.printf(" press A: %lums\n", fob.buttons.pressDurationA);
 #endif
+      beepA = true;
     }
 
     if (M5.BtnB.wasPressed())
-      fob.buttons.pressDurationB = currentTime;
+    {
+      fob.buttons.lastPressTimeB = currentTime;
+      fob.buttons.isPressedB = true;
+    }
+    
+    if(fob.buttons.isPressedB && beepB && (currentTime - fob.buttons.lastPressTimeB) >= LONG_PRESS_THRESHOLD_MS)
+    {
+      beepB = false;
+      M5.Speaker.tone(7000, 50);
+    }
 
     if (M5.BtnB.wasReleased())
     {
-      if (fob.buttons.pressDurationB + LONG_PRESS_THRESHOLD_MS < currentTime)
+      fob.buttons.isPressedB = false;
+      fob.buttons.pressDurationB = currentTime - fob.buttons.lastPressTimeB;
+      if (fob.buttons.pressDurationB > LONG_PRESS_THRESHOLD_MS)
       {
         fob.buttons.btnPressB = STARLINKFOB_BUTTONPRESS_LONG;
 #ifdef UI_DEBUG_LOG
@@ -1365,15 +1406,42 @@ void buttonWatchTask(void *arg)
       }
       else
       {
-        fob.buttons.btnPressB = STARLINKFOB_BUTTONPRESS_LONG;
+        fob.buttons.btnPressB = STARLINKFOB_BUTTONPRESS_SHORT;
 #ifdef UI_DEBUG_LOG
         Serial.print("Short");
 #endif
       }
 #ifdef UI_DEBUG_LOG
-      Serial.printf(" press B: %ldms\n", currentTime - fob.buttons.pressDurationB);
+      Serial.printf(" press B: %lums\n", fob.buttons.pressDurationB);
+#endif
+      beepB = true;
+    }
+
+    if (M5.BtnPWR.wasPressed())
+      fob.buttons.lastPressTimeC = currentTime;
+
+    if (M5.BtnPWR.wasReleased())
+    {
+      fob.buttons.pressDurationC = currentTime - fob.buttons.lastPressTimeC;
+      if (fob.buttons.pressDurationC > LONG_PRESS_THRESHOLD_MS)
+      {
+        fob.buttons.btnPressC = STARLINKFOB_BUTTONPRESS_LONG;
+#ifdef UI_DEBUG_LOG
+        Serial.print("Long");
+#endif
+      }
+      else
+      {
+        fob.buttons.btnPressC = STARLINKFOB_BUTTONPRESS_SHORT;
+#ifdef UI_DEBUG_LOG
+        Serial.print("Short");
+#endif
+      }
+#ifdef UI_DEBUG_LOG
+      Serial.printf(" press C: %lums\n", fob.buttons.pressDurationC);
 #endif
     }
+
 #ifdef UI_DEBUG_LOG
     if (lastStackCheckTime + 10000 < currentTime)
     {

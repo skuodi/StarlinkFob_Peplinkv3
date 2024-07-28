@@ -10,9 +10,9 @@
 - [Core features](#core-features)
   - [x] [1. Use asynchronous delays](#1-use-asynchronous-delays)
   - [x] [2. Dual-core configuration](#2-dual-core-configuration)
-  - [3. Beep on long press only](#3-beep-on-long-press-only)
+  - [x] [3. Beep on long press only](#3-beep-on-long-press-only)
   - [4. Add button C functionality](#4-add-button-c-functionality)
-  - [5. Interrupts for button press detection](#5-interrupts-for-button-press-detection)
+  - [ ] [5. Interrupts for button press detection](#5-interrupts-for-button-press-detection)
   - [x] [6. Home page rendering issue](#6-home-page-rendering-issue)
   - [x] [7. HTTP server early startup](#7-http-server-early-startup)
   - [8. Startup sequence](#8-startup-sequence)
@@ -111,6 +111,10 @@ Play beep when detecting long press B (different tone), should be heard before h
 This will help with the user knowing how long to hold button.
 No tone for short press.
 ```
+
+- Button A long press beeps at 9KHz for 50ms
+- Button B long press beeps at 7KHz for 50ms
+
 
 ### 4. Add button C functionality
 
