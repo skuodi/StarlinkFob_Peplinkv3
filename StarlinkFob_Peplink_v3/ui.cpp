@@ -1419,7 +1419,7 @@ void countdownTask(void *arg)
     delay(10);
 
   if (countdownType == UI_COUNTDOWN_TYPE_WIFI)
-    M5.Lcd.printf("SSID: %s\n\n", WiFi.SSID().c_str());
+    M5.Lcd.printf("SSID: %s\n\n", (fob.wifi.usePrimarySsid) ? fob.wifi.ssidStaPrimary.c_str() : fob.wifi.ssidStaSecondary.c_str());
 
   const int cursorX = M5.Lcd.getCursorX();
   const int cursorY = M5.Lcd.getCursorY();

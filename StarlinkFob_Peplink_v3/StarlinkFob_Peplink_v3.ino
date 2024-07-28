@@ -187,15 +187,6 @@ void setup()
 
   esp_sntp_servermode_dhcp(1);
   configTime(GMT_OFFSET_SEC, DAYLIGHT_OFFSET_SEC, NTP_SERVER1, NTP_SERVER2);
-  
-  // Attempt to retrieve all information about the router and print to console on success
-  if(fob.routers.router.update())
-  {
-    printRouterInfo(fob.routers.router);
-    printRouterLocation(fob.routers.router);
-    printRouterClients(fob.routers.router);
-    printRouterWanStatus(fob.routers.router);
-  }
 }
 
 void loop()
