@@ -92,6 +92,7 @@ void goToHomePage(void *arg = NULL)
 
 void goToWiFiPage(void *arg = NULL)
 {
+  fob.wifi.usePrimarySsid = true;
   fob.menu.goToPage(wifiPageId);
 }
 
@@ -107,6 +108,7 @@ void goToSensorsPage(void *arg = NULL)
 
 void goToWiFiPromptPage(void *arg = NULL)
 {
+  fob.wifi.usePrimarySsid = true;
   fob.menu.goToPage(wifiPromptPageId);
 }
 
@@ -862,6 +864,7 @@ void getWanList(void *arg)
 /// @brief Stop waiting for Wi-Fi to connect and go to homepage
 void cancelWiFiSetup(void *arg)
 {
+  fob.wifi.usePrimarySsid = true;
   WiFi.mode(WIFI_MODE_NULL);
   fob.menu.goToPage(lastVisitedPageId);
 }
@@ -1462,16 +1465,20 @@ void countdownTask(void *arg)
   {
     if (countdownType == UI_COUNTDOWN_TYPE_WIFI)
     {
-      if (fob.booting && fob.wifi.usePrimarySsid)
+      if (fob.wifi.usePrimarySsid)
       {
         fob.wifi.usePrimarySsid = false;
-        WiFi.mode(WIFI_MODE_NULL);
-        delay(100);
+        // WiFi.mode(WIFI_MODE_NULL);
+        // delay(100);
+        fob.menu.goToPage(lastVisitedPageId);
+        xTaskNotify(fob.tasks.wifiWatch, 1, eSetValueWithOverwrite);
       }
       else
+      {
         fob.wifi.timedOut = true;
+        goToWiFiPromptPage();
+      }
 
-      goToWiFiPromptPage();
     }
     else if (countdownType == UI_COUNTDOWN_TYPE_SHUTDOWN)
     {

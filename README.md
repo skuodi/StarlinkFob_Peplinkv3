@@ -6,7 +6,7 @@
   - [x] [2. Debug logs](#2-debug-logs)
   - [x] [3. Logic flow](#3-logic-flow)
   - [x] [4. Guide to adding new menus](#4-guide-to-adding-new-menus)
-  - [5. Primary and secondary Wi-Fi](#5-primary-and-secondary-wi-fi)
+  - [x] [5. Primary and secondary Wi-Fi](#5-primary-and-secondary-wi-fi)
 - [Core features](#core-features)
   - [x] [1. Use asynchronous delays](#1-use-asynchronous-delays)
   - [x] [2. Dual-core configuration](#2-dual-core-configuration)
@@ -72,6 +72,14 @@ Also a readme document on how to add new menus.
 ```
 Explain how the two wifi's work, I'm not sure I understand/it doesn't seem to work for me.
 ```
+
+At first boot, when the Wi-Fi is manually enabled or upon Wi-Fi connection loss, the device first attempts
+to connect to the primary SSID, counting down for 5 minutes.
+- If connection is unsuccessful, an attempt is made using the secondary SSID.
+- If this is also unsuccessful, the Wi-Fi disconnected page is displayed with options to retry connecting,
+  start the AP or cancel Wi-Fi setup.
+- Upon retry, connection to the primary SSID is attempted, followed by the secondary SSID as aforementioned
+
 ## Core features
 
 ### 1. Use asynchronous delays
