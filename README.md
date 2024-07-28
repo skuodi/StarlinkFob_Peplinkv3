@@ -4,7 +4,7 @@
 - [Misc](#misc)
   - [x] [1. Comments](#1-comments)
   - [x] [2. Debug logs](#2-debug-logs)
-  - [3. Logic flow](#3-logic-flow)
+  - [x] [3. Logic flow](#3-logic-flow)
   - [x] [4. Guide to adding new menus](#4-guide-to-adding-new-menus)
   - [5. Primary and secondary Wi-Fi](#5-primary-and-secondary-wi-fi)
 - [Core features](#core-features)
@@ -57,6 +57,9 @@ Implement debug mode that outputs a lot more output to serial, and also suppress
 ```
 Separately add a readme that has a simple sequence of startup/shutdown/error condition flows.
 ```
+[`Sequence_diagrams.md`](Sequence_diagrams.md) contains the following diagrams:
+- [Boot flow](Sequence_diagrams.md#boot-flow)
+- [Wi-Fi loss recovery](Sequence_diagrams.md#wi-fi-loss-recovery)
 
 ### 4. Guide to adding new menus
 ```
