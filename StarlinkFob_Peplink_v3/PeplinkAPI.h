@@ -66,6 +66,7 @@ public:
     long upload;        // Upload bandwidth
     long download;      // Download bandwidth
     String unit;        // Unit used for upload/download bandwidth
+    int id;
     int priority;
     PeplinkAPI_WANType_t type;
     bool managementOnly;
@@ -111,6 +112,7 @@ struct PeplinkAPI_WAN_Traffic
     long download;
     long upload;
     String unit;
+    int id;
 };
 
 /// @brief Router device information
@@ -173,10 +175,10 @@ public:
     bool getClientList();
     
     /// @brief Get the WAN connection status
-    bool getWanStatus();
+    bool getWanStatus(uint8_t id = 0);
     
     /// @brief Get the bandwith of all WANs
-    bool getWanTraffic();
+    bool getWanTraffic(uint8_t id = 0);
     
     /// @brief Get device information from router
     bool getInfo();

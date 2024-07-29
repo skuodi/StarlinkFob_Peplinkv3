@@ -29,7 +29,7 @@
   - [1. Loading indication](#1-loading-indication)
   - [x] [2. WAN list sort by priority](#2-wan-list-sort-by-priority)
   - [x] [3. SIM List page](#3-sim-list-page)
-  - [4. WAN status PAGE](#4-wan-status-page)
+  - [x] [4. WAN status PAGE](#4-wan-status-page)
   - [x] [5. WAN summary page display](#5-wan-summary-page-display)
   - [6. Cellular signal indicator](#6-cellular-signal-indicator)
   - [7. Add router reboot option](#7-add-router-reboot-option)
@@ -411,6 +411,8 @@ Wan status PAGE
  
  On PeplinkAPI_WAN_Traffic speed change ["response"]["traffic"] to ["response"]["bandwidth"]
 ```
+
+- Implemented with the page auto refreshing without need for user input
 
 ### 5. WAN summary page display
 ```

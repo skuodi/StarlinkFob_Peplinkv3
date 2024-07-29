@@ -422,7 +422,7 @@ bool PeplinkRouter::_grantClientToken(PeplinkAPI_ClientInfo &client)
   return true;
 }
 
-bool PeplinkRouter::getWanTraffic()
+bool PeplinkRouter::getWanTraffic(uint8_t id)
 {
   
   String uri = "/api/status.traffic?accessToken=" + _token;
@@ -443,26 +443,45 @@ bool PeplinkRouter::getWanTraffic()
     speed.download = recvDoc["response"]["bandwidth"][String(key).c_str()]["overall"]["download"].as<int>();
     speed.upload = recvDoc["response"]["bandwidth"][String(key).c_str()]["overall"]["upload"].as<int>();
     speed.unit = recvDoc["response"]["bandwidth"]["unit"].as<String>();
-
+    speed.id = key;
     _wanTraffic.push_back(speed);
   }
-  
-  for(size_t i = 0; i < _wanTraffic.size(), i < _wan.size(); ++i)
+
+  if(id == 0)
   {
-    _wan[i]->download = _wanTraffic[i].download;
-    _wan[i]->upload = _wanTraffic[i].upload;
-    _wan[i]->unit = _wanTraffic[i].unit;
+    for(size_t i = 0; i < _wanTraffic.size(), i < _wan.size(); ++i)
+    {
+      _wan[i]->download = _wanTraffic[i].download;
+      _wan[i]->upload = _wanTraffic[i].upload;
+      _wan[i]->unit = _wanTraffic[i].unit;
+    }
   }
+  else
+  {  
+    for(size_t i = 0; i < _wanTraffic.size(); ++i)
+    {
+      if(id == _wanTraffic[i].id)
+      {
+        _wan[0]->download = _wanTraffic[i].download;
+        _wan[0]->upload = _wanTraffic[i].upload;
+        _wan[0]->unit = _wanTraffic[i].unit;
+        break;
+      }
+    }
+  }
+
   return true;
 } 
 
-bool PeplinkRouter::getWanStatus()
+bool PeplinkRouter::getWanStatus(uint8_t id)
 {
   for(PeplinkAPI_WAN* wan: _wan)
     delete wan;
   _wan.clear();
 
   String uri = "/api/status.wan.connection?accessToken=" + _token;
+  if(id != 0 && id <= 3)
+    uri += "&id=" + String(id);
 
   JsonDocument recvDoc;
   String response = _sendJsonRequest(PEPLINKAPI_HTTP_REQUEST_GET, uri, NULL);
@@ -482,18 +501,21 @@ bool PeplinkRouter::getWanStatus()
     if (wanType == "ethernet")
     {
       PeplinkAPI_WAN_Ethernet wan = _parseEthernetWAN(wanInfo);
+      wan.id = key;
       if (wan.name.length())
         _wan.push_back((PeplinkAPI_WAN *)new PeplinkAPI_WAN_Ethernet(wan));
     }
     else if (wanType == "cellular")
     {
       PeplinkAPI_WAN_Cellular wan = _parseCellularWAN(wanInfo);
+      wan.id = key;
       if (wan.name.length())
         _wan.push_back((PeplinkAPI_WAN *)new PeplinkAPI_WAN_Cellular(wan));
     }
     else if (wanType == "wifi")
     {
       PeplinkAPI_WAN_WiFi wan = _parseWiFiWAN(wanInfo);
+      wan.id = key;
       if (wan.name.length())
         _wan.push_back((PeplinkAPI_WAN *)new PeplinkAPI_WAN_WiFi(wan));
     }
@@ -530,7 +552,7 @@ bool PeplinkRouter::getWanStatus()
       _wan.erase(_wan.begin());
 
   }
-  getWanTraffic();
+  getWanTraffic(id);
   return true;
 }
 

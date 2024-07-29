@@ -318,14 +318,6 @@ void lcdPrintRouterLocation(void *arg = NULL)
 /// @brief Fetch and print the selected WAN information
 void lcdPrintRouterWANInfo(void *arg = NULL)
 {
-  if(!fob.routers.router.getWanStatus())
-  {
-    M5.Lcd.setTextColor(RED, BLACK);
-    M5.Lcd.println("Unavailable!");
-    M5.Lcd.setTextColor(MINU_FOREGROUND_COLOUR_DEFAULT, MINU_BACKGROUND_COLOUR_DEFAULT);
-    return;
-  }
-
   std::vector<PeplinkAPI_WAN *> wanList = fob.routers.router.wanStatus();
   if (!wanList.size())
   {
@@ -339,28 +331,42 @@ void lcdPrintRouterWANInfo(void *arg = NULL)
   {
     if (!strcmp(wan->name.c_str(), lastSelectedWAN.c_str()))
     {
-      M5.Lcd.printf("Name:%s\n", wan->name.c_str());
-      M5.Lcd.print("Type:");
-      switch (wan->type)
+      if(!fob.routers.router.getWanStatus(wan->id))
       {
-      case PEPLINKAPI_WAN_TYPE_ETHERNET:
-        M5.Lcd.print("ETHERNET\n");
-        break;
-      case PEPLINKAPI_WAN_TYPE_CELLULAR:
-        M5.Lcd.print("CELLULAR\n");
-        M5.Lcd.printf("Carr:%s %s\n",((PeplinkAPI_WAN_Cellular *)wan)->carrier.c_str(), ((PeplinkAPI_WAN_Cellular *)wan)->networkType);
-        break;
-      case PEPLINKAPI_WAN_TYPE_WIFI:
-        M5.Lcd.print("WIFI\n");
-        break;
+        M5.Lcd.setTextColor(RED, BLACK);
+        M5.Lcd.println("Unavailable!");
+        M5.Lcd.setTextColor(MINU_FOREGROUND_COLOUR_DEFAULT, MINU_BACKGROUND_COLOUR_DEFAULT);
+        return;
       }
-      M5.Lcd.printf("Stat:%s\n", wan->status.c_str());
+      else
+      {
+        M5.Lcd.printf("Name:%s      \n", wan->name.c_str());
+        M5.Lcd.print("Type:");
+        switch (wan->type)
+        {
+        case PEPLINKAPI_WAN_TYPE_ETHERNET:
+          M5.Lcd.print("ETHERNET\n");
+          break;
+        case PEPLINKAPI_WAN_TYPE_CELLULAR:
+          M5.Lcd.print("CELLULAR\n");
+          M5.Lcd.printf("Carr:%s ",((PeplinkAPI_WAN_Cellular *)wan)->carrier.c_str());
+          M5.Lcd.setTextColor(TFT_WHITE, TFT_BLUE);
+          M5.Lcd.println(((PeplinkAPI_WAN_Cellular *)wan)->networkType);
+          M5.Lcd.setTextColor(TFT_WHITE, TFT_BLACK);
+          break;
+        case PEPLINKAPI_WAN_TYPE_WIFI:
+          M5.Lcd.print("WIFI\n");
+          break;
+        }
+        M5.Lcd.printf("Stat:%s\n", wan->status.c_str());
 
-      if(wan->status == "Disabled")
-        break;
-      M5.Lcd.printf("IP  :%s\n", wan->ip.c_str());
-      M5.Lcd.print("U/D :");
-      M5.Lcd.printf("%ld/%ld %s     \n", wan->upload, wan->download, wan->unit);
+        if(wan->status == "Disabled")
+          break;
+        M5.Lcd.printf("IP  :%s\n", wan->ip.c_str());
+        M5.Lcd.print("U/D :");
+        M5.Lcd.printf("%ld/%ld %s     \n", wan->upload, wan->download, wan->unit);
+      }
+      break;
     }
   }
 }
