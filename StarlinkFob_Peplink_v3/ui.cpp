@@ -1588,6 +1588,10 @@ void countdownTask(void *arg)
       }
       else if (fob.booting)
       {  
+        M5.Lcd.clear();
+        M5.Lcd.setCursor(0, cursorY);
+        M5.Lcd.printf(" Connected to WiFi:\n %s\n", (fob.wifi.usePrimarySsid) ? fob.wifi.ssidStaPrimary.c_str() : fob.wifi.ssidStaSecondary.c_str());
+        vTaskDelay(2000);
         if(!fob.servers.started)
         {
           fob.servers.started = true;
@@ -1598,7 +1602,13 @@ void countdownTask(void *arg)
         xTaskNotify(fob.tasks.wifiWatch, 1, eSetValueWithOverwrite);
       }
       else
+      {  
+        M5.Lcd.clear();
+        M5.Lcd.setCursor(0, cursorY);
+        M5.Lcd.printf(" Connected to WiFi:\n %s\n", (fob.wifi.usePrimarySsid) ? fob.wifi.ssidStaPrimary.c_str() : fob.wifi.ssidStaSecondary.c_str());
+        vTaskDelay(2000);
         fob.menu.goToPage(lastVisitedPageId);
+      }
     }
     else if (countdownType == UI_COUNTDOWN_TYPE_SHUTDOWN || countdownType == UI_COUNTDOWN_TYPE_REBOOT)
       goToHomePage();

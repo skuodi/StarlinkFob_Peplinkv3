@@ -19,7 +19,7 @@
   - [x] [9. New splash screen sequence](#9-new-splash-screen-sequence)
   - [x] [10. Update time screen](#10-update-time-screen)
   - [x] [11. Add sensors screen](#11-add-sensors-screen)
-  - [12. Changes to Wi-Fi post-connection sequence](#12-changes-to-wi-fi-post-connection-sequence)
+  - [x] [12. Changes to Wi-Fi post-connection sequence](#12-changes-to-wi-fi-post-connection-sequence)
   - [13. USB power loss detection](#13-usb-power-loss-detection)
   - [x] [14. Temperature alarm \& logging](#14-temperature-alarm--logging)
   - [x] [15. Ping screen loop over hosts](#15-ping-screen-loop-over-hosts)
@@ -245,6 +245,7 @@ Display Connected to SSID name for 2 secs
 
 #9 Wan summary screen
 ```
+- Displays SSID of connected network
 
 ### 13. USB power loss detection
 ```
