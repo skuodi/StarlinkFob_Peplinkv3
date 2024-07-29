@@ -12,15 +12,15 @@
   - [x] [2. Dual-core configuration](#2-dual-core-configuration)
   - [x] [3. Beep on long press only](#3-beep-on-long-press-only)
   - [4. Add button C functionality](#4-add-button-c-functionality)
-  - [ ] [5. Interrupts for button press detection](#5-interrupts-for-button-press-detection)
+  - [x] [5. Interrupts for button press detection](#5-interrupts-for-button-press-detection)
   - [x] [6. Home page rendering issue](#6-home-page-rendering-issue)
   - [x] [7. HTTP server early startup](#7-http-server-early-startup)
-  - [8. Startup sequence](#8-startup-sequence)
+  - [x] [8. Startup sequence](#8-startup-sequence)
   - [x] [9. New splash screen sequence](#9-new-splash-screen-sequence)
   - [x] [10. Update time screen](#10-update-time-screen)
   - [x] [11. Add sensors screen](#11-add-sensors-screen)
   - [x] [12. Changes to Wi-Fi post-connection sequence](#12-changes-to-wi-fi-post-connection-sequence)
-  - [13. USB power loss detection](#13-usb-power-loss-detection)
+  - [x] [13. USB power loss detection](#13-usb-power-loss-detection)
   - [x] [14. Temperature alarm \& logging](#14-temperature-alarm--logging)
   - [x] [15. Ping screen loop over hosts](#15-ping-screen-loop-over-hosts)
 - [Network](#network)
@@ -131,6 +131,7 @@ Should all buttons be detected via interrupts?
 ```
 
 - The API does not expose any function to find out how long a button has been pressed until it is released. So to achieve the requested beep-on-long-press functionality, interrupts are necessary to provide flexibility in handling and it should be possible to use them on all buttons
+- The use of interrupts for user inputs causes frequent interruption to the scheduling of tasks, causing the device to crash. Thus the use of interrupts is infeasible.
 
 ### 6. Home page rendering issue
 
@@ -150,9 +151,88 @@ Startup sequence (define/show me how to add change the sequence of screens)
 ```
 
 There is no straightforward way to implement the changing of screens, since specific conditions must be met before the page changes.
+The startup sequence of screens to be displayed corresponding conditions is defined manually at each step;
+- On boot, the `menuInit()` function is called to initialise the menu and child pages, and to
+  start UI tasks.
+- `menuInit()` calls `startWiFiConnectCountdown()` to initiate the connection to Wi-Fi
+- Within the Wi-Fi connection countdown, three possible conditions may terminate the countdown
+  1.  Successful connection - if booting, the HTTP server is started then we proceed to the ping targets page
+```c
+void countdownTask(void *arg)
+...
+      else if (fob.booting)
+      {  
+        M5.Lcd.clear();
+        M5.Lcd.setCursor(0, cursorY);
+        M5.Lcd.printf(" Connected to WiFi:\n %s\n", (fob.wifi.usePrimarySsid) ? fob.wifi.ssidStaPrimary.c_str() : fob.wifi.ssidStaSecondary.c_str());
+        vTaskDelay(2000);
+        if(!fob.servers.started)
+        {
+          fob.servers.started = true;
+          Serial.println("Starting HTTP Server");
+          startHttpServer();
+        }
+        goToPingTargetsPage();
+        xTaskNotify(fob.tasks.wifiWatch, 1, eSetValueWithOverwrite);
+      }
+```
+	- and if not booting, we return to the page before the Wi-Fi loss recovery was initiated
+```c
+void countdownTask(void *arg)
+...
+      else
+      {  
+        M5.Lcd.clear();
+        M5.Lcd.setCursor(0, cursorY);
+        M5.Lcd.printf(" Connected to WiFi:\n %s\n", (fob.wifi.usePrimarySsid) ? fob.wifi.ssidStaPrimary.c_str() : fob.wifi.ssidStaSecondary.c_str());
+        vTaskDelay(2000);
+        fob.menu.goToPage(lastVisitedPageId);
+      }
+```
+
+  2. Connection timeout
+     - if it was the primary SSID that timed out, we try the secondary SSID.
+     - if it was the secondary SSID that timed out, Wi-Fi connection has failed so we display the Wi-Fi connection failed dialog
 
 ```c
-/// @todo List examples of these conditions
+void countdownTask(void *arg)
+...
+      if (fob.wifi.usePrimarySsid)
+      {
+        fob.wifi.usePrimarySsid = false;
+        fob.menu.goToPage(lastVisitedPageId);
+        xTaskNotify(fob.tasks.wifiWatch, 1, eSetValueWithOverwrite);
+      }
+      else
+      {
+        fob.wifi.timedOut = true;
+        goToWiFiPromptPage();
+      }
+```
+
+  3. Countdown was cancelled by the user
+    - Same response as a Wi-Fi secondary SSID timeout: prompt the user
+
+```c
+void countdownTask(void *arg)
+...
+      if (stopCountdown)
+      {
+        fob.wifi.timedOut = true;
+        goToWiFiPromptPage();
+      }
+```
+
+- On boot, upon successful Wi-Fi connection, we enter the ping targets page that continuously loops through the ping targets
+- If the router is successfully pinged, we exit the ping loop and proceed to connect to the router
+```c
+void dataUpdateTask(void *arg)
+...
+    if (updateType == UI_UPDATE_TYPE_PING && fob.booting && fob.pingTargets[0].pingOK)
+    {
+      fob.booting = false;
+      break;
+    }
 ```
 
 ### 9. New splash screen sequence
@@ -257,6 +337,7 @@ On shutdown or detect loss of usb power
 -write runtime hh:mm to eeprom when power loss was detected.
 -Ensure that device powers back on when usb power is restored, after a complete shutdown.
 ```
+- There is no hardware-provided method to detect availability of USB power so this feature cannot be implemented on the M5StickC Plus2
 
 ### 14. Temperature alarm & logging
 ```
