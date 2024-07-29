@@ -668,7 +668,7 @@ void startWiFiConnectCountdown(void *arg = NULL)
 
   if (fob.tasks.countdown)
     vTaskDelete(fob.tasks.countdown);
-  xTaskCreatePinnedToCore(countdownTask, "WiFi Countdown", 2048, (void *)UI_COUNTDOWN_TYPE_WIFI, 2, &fob.tasks.countdown, ARDUINO_RUNNING_CORE);
+  xTaskCreatePinnedToCore(countdownTask, "WiFi Countdown", 4096, (void *)UI_COUNTDOWN_TYPE_WIFI, 2, &fob.tasks.countdown, ARDUINO_RUNNING_CORE);
 
   if (WiFi.getMode() != WIFI_MODE_STA)
   {
