@@ -26,12 +26,12 @@
 - [Network](#network)
   - [1. HTTPS ignore certificate CN verification](#1-https-ignore-certificate-cn-verification)
 - [Peplink](#peplink)
-  - [1. Loading indication](#1-loading-indication)
+  - [x] [1. Loading indication](#1-loading-indication)
   - [x] [2. WAN list sort by priority](#2-wan-list-sort-by-priority)
   - [x] [3. SIM List page](#3-sim-list-page)
   - [x] [4. WAN status PAGE](#4-wan-status-page)
   - [x] [5. WAN summary page display](#5-wan-summary-page-display)
-  - [6. Cellular signal indicator](#6-cellular-signal-indicator)
+  - [x] [6. Cellular signal indicator](#6-cellular-signal-indicator)
   - [7. Add router reboot option](#7-add-router-reboot-option)
 
 ## Misc
@@ -374,6 +374,8 @@ https://www.esp32.com/viewtopic.php?t=19200
 For screens that Auto refresh, display o/O, blinking . ,refresh icon or something to indicate it's loading in upper right corner of Title when it's getting json data instead of fetching or Getting WAN list.
 ```
 
+- The smallest feasible loading icon (30px by 30px) has been used
+
 ### 2. WAN list sort by priority
 ```
 Look at the json returned from the api/status.wan.connection display the wan list according to the "priority": 2 values.
@@ -433,6 +435,8 @@ WAN summary page display
 Implement cell signalLevel as icon or line draw displaying cell signal level like you see on a phone. (should occupy at most two squares)
 You can use TFT_GREY as the disabled signal line, and blue as the enabled line, or see what you come up with.
 ```
+
+- Cellular signal indicator added as 5 separate icons each showing a different signal level. Displays on Cellular type WAN details page and WAN summary page
 
 ### 7. Add router reboot option
 ```

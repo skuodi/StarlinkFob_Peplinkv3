@@ -273,7 +273,7 @@ void lcdPrintRouterInfo(void *arg = NULL)
   const int cursorX = M5.Lcd.getCursorX();
   const int cursorY = M5.Lcd.getCursorY();
 
-  M5.Lcd.println("Fetching...");
+  M5.Lcd.drawBitmap(0, cursorY, 40, 40, loading, 0);
 
   if (!fob.routers.router.isAvailable() || !fob.routers.router.getInfo())
   {
@@ -351,8 +351,17 @@ void lcdPrintRouterWANInfo(void *arg = NULL)
           M5.Lcd.print("CELLULAR\n");
           M5.Lcd.printf("Carr:%s ",((PeplinkAPI_WAN_Cellular *)wan)->carrier.c_str());
           M5.Lcd.setTextColor(TFT_WHITE, TFT_BLUE);
-          M5.Lcd.println(((PeplinkAPI_WAN_Cellular *)wan)->networkType);
+          M5.Lcd.printf("%s", ((PeplinkAPI_WAN_Cellular *)wan)->networkType.c_str());
           M5.Lcd.setTextColor(TFT_WHITE, TFT_BLACK);
+          switch (((PeplinkAPI_WAN_Cellular *)wan)->signalLevel)
+          {
+            case 0: M5.Lcd.drawBitmap(M5.Lcd.getCursorX() + 10, M5.Lcd.getCursorY() - 5, 20, 21, bars0, 0); break;
+            case 1: M5.Lcd.drawBitmap(M5.Lcd.getCursorX() + 10, M5.Lcd.getCursorY() - 5, 20, 21, bars1, 0); break;
+            case 2: M5.Lcd.drawBitmap(M5.Lcd.getCursorX() + 10, M5.Lcd.getCursorY() - 5, 20, 21, bars2, 0); break;
+            case 3: M5.Lcd.drawBitmap(M5.Lcd.getCursorX() + 10, M5.Lcd.getCursorY() - 5, 20, 21, bars3, 0); break;
+            default: M5.Lcd.drawBitmap(M5.Lcd.getCursorX()+ 10, M5.Lcd.getCursorY() - 5, 20, 21, bars4, 0); break;
+          }
+          M5.Lcd.println(" ");
           break;
         case PEPLINKAPI_WAN_TYPE_WIFI:
           M5.Lcd.print("WIFI\n");
@@ -456,7 +465,7 @@ void printRouterWanStatus(void* arg = NULL)
 {
   Serial.println("Getting WAN list - ");
   M5.Lcd.setCursor(0, 0, 1);
-  M5.Lcd.println("_____WAN SUMMARY____");
+  M5.Lcd.println("_____WAN SUMMARY____\n");
 
   const int cursorX = M5.Lcd.getCursorX();
   const int cursorY = M5.Lcd.getCursorY();
@@ -554,7 +563,14 @@ void printRouterWanStatus(void* arg = NULL)
             M5.Lcd.setTextColor(TFT_WHITE, TFT_BLUE);
             M5.Lcd.print(((PeplinkAPI_WAN_Cellular *)wan)->networkType);
             M5.Lcd.setTextColor(TFT_WHITE, TFT_BLACK);
-            M5.Lcd.println(" Bars:" + String(((PeplinkAPI_WAN_Cellular *)wan)->signalLevel));
+            switch (((PeplinkAPI_WAN_Cellular *)wan)->signalLevel)
+            {
+            case 0: M5.Lcd.drawBitmap(M5.Lcd.getCursorX() + 10, M5.Lcd.getCursorY() - 5, 20, 21, bars0, 0); break;
+            case 1: M5.Lcd.drawBitmap(M5.Lcd.getCursorX() + 10, M5.Lcd.getCursorY() - 5, 20, 21, bars1, 0); break;
+            case 2: M5.Lcd.drawBitmap(M5.Lcd.getCursorX() + 10, M5.Lcd.getCursorY() - 5, 20, 21, bars2, 0); break;
+            case 3: M5.Lcd.drawBitmap(M5.Lcd.getCursorX() + 10, M5.Lcd.getCursorY() - 5, 20, 21, bars3, 0); break;
+            default: M5.Lcd.drawBitmap(M5.Lcd.getCursorX() + 10, M5.Lcd.getCursorY() - 5, 20, 21, bars4, 0); break;
+            }
           }
           printSimCards(((PeplinkAPI_WAN_Cellular *)wan)->simCards);
         }
@@ -821,7 +837,6 @@ void getWanList(void *arg)
   const int cursorX = M5.Lcd.getCursorX();
   const int cursorY = M5.Lcd.getCursorY();
   Serial.println("Fetching WAN list");
-  M5.Lcd.println("Fetching...");
 
   if (!fob.routers.router.isAvailable() || !fob.routers.router.getWanStatus())
   {
