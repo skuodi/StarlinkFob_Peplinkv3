@@ -28,10 +28,10 @@ typedef enum
 {
   UI_UPDATE_TYPE_TIME = 1,
   UI_UPDATE_TYPE_SENSORS,
-  UI_UPDATE_TYPE_ROUTER_INFO,
+  UI_UPDATE_TYPE_WAN_INFO,
   UI_UPDATE_TYPE_FOB_INFO,
   UI_UPDATE_TYPE_PING,
-  UI_UPDATE_TYPE_WAN
+  UI_UPDATE_TYPE_WAN_SUMMARY
 } UiUpdateType;
 
 /// @brief Information about a Wi-Fi network found during a Wi-Fi scan
@@ -653,7 +653,7 @@ void startDataUpdate(void *arg = NULL)
     fob.sensors.qmpAvailable = fob.sensors.qmp.begin(&Wire, QMP6988_SLAVE_ADDRESS_L, 0, 26, 400000U);
   }
   else if (fob.menu.currentPageId() == routerWANInfoPageId)
-    ut = UI_UPDATE_TYPE_ROUTER_INFO;
+    ut = UI_UPDATE_TYPE_WAN_INFO;
   else if (fob.menu.currentPageId() == fobInfoPageId)
     ut = UI_UPDATE_TYPE_FOB_INFO;
   else if (fob.menu.currentPageId() == pingTargetsPageId)
@@ -666,7 +666,7 @@ void startDataUpdate(void *arg = NULL)
       xTaskNotify(fob.tasks.screenUpdate, 1, eSetValueWithOverwrite);
   }
   else if(fob.menu.currentPageId() == routerWANSummaryPageId)
-    ut = UI_UPDATE_TYPE_WAN;
+    ut = UI_UPDATE_TYPE_WAN_SUMMARY;
   else
     return;
 
@@ -1656,7 +1656,7 @@ void dataUpdateTask(void *arg)
   Serial.printf("Started data update task: type %d\n", updateType);
 #endif
   M5.Lcd.fillRect(0, cursorY, M5.Lcd.width(), M5.Lcd.height() - cursorY, MINU_BACKGROUND_COLOUR_DEFAULT);
-  if(updateType == UI_UPDATE_TYPE_ROUTER_INFO)
+  if(updateType == UI_UPDATE_TYPE_WAN_INFO)
     fob.routers.router.getWanStatus();
   while (1)
   {
@@ -1667,13 +1667,13 @@ void dataUpdateTask(void *arg)
       lcdPrintTime();
     else if(updateType == UI_UPDATE_TYPE_SENSORS)
       lcdPrintSensors();
-    else if (updateType == UI_UPDATE_TYPE_ROUTER_INFO)
+    else if (updateType == UI_UPDATE_TYPE_WAN_INFO)
       lcdPrintRouterWANInfo();
     else if (updateType == UI_UPDATE_TYPE_FOB_INFO)
       lcdPrintFobInfo();
     else if (updateType == UI_UPDATE_TYPE_PING)
       updatePingTargetsStatus();
-    else if (updateType == UI_UPDATE_TYPE_WAN)
+    else if (updateType == UI_UPDATE_TYPE_WAN_SUMMARY)
       printRouterWanStatus();
 
     Serial.printf("Update type %d done\n", updateType);

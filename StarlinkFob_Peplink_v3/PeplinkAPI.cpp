@@ -540,16 +540,16 @@ bool PeplinkRouter::getWanStatus(uint8_t id)
   // Rearrange the WAN list based on priority
   if(this->_wan.size() > 1)
   {
-    size_t wanCount = _wan.size();
+    size_t wanCount = this->_wan.size();
     size_t currentWanPriority = 1;
 
     for(size_t i = 0; i < wanCount; ++i)
     {
       for(size_t j = 0; j < wanCount; ++j)
       {
-        if(_wan[i]->priority == currentWanPriority)
+        if(this->_wan[i]->priority == currentWanPriority)
         {
-          _wan.push_back(_wan[i]);
+          this->_wan.push_back(this->_wan[i]);
           break;
         }
       }
@@ -558,12 +558,12 @@ bool PeplinkRouter::getWanStatus(uint8_t id)
 
     // Append the rest of the WANs with no priority assigned
     for(size_t i = 0; i < wanCount; ++i)
-      if(_wan[i]->priority == 0)
-        _wan.push_back(_wan[i]);
+      if(this->_wan[i]->priority == 0)
+        this->_wan.push_back(this->_wan[i]);
 
     // Erase the old list
     for(size_t i = 0; i < wanCount; i++)
-      _wan.erase(_wan.begin());
+      this->_wan.erase(this->_wan.begin());
 
   }
   getWanTraffic(id);
