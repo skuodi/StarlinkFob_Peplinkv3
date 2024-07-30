@@ -268,9 +268,10 @@ void PeplinkRouter::_deleteExistingClients()
 String PeplinkRouter::begin(String username, String password, String clientName, PeplinkAPI_ClientScope_t clientScope, bool deleteExistingClients)
 {
     // Check that the router is accessible (ping)
-    if (!isAvailable())
+    if (!checkAvailable())
     {
       Serial.println("Router ping failed!! IP : " + _ip + String(" Port: ") + String(_port));
+      _available = false;
       return String();
     }
 
@@ -281,7 +282,10 @@ String PeplinkRouter::begin(String username, String password, String clientName,
     {
       cookie = login(username.c_str(), password.c_str());
       if (!cookie.length())
+      {
+        _available = false;
         return String();
+      }
     }
 
     // If no access token has been retrieved from storage, get the list of existing clients and attempt to grant a new token
@@ -304,11 +308,11 @@ String PeplinkRouter::begin(String username, String password, String clientName,
             _deleteExistingClients();
       }    
     }
-    
+    _available = true;
     return _cookie;
 }
 
-bool PeplinkRouter::isAvailable()
+bool PeplinkRouter::checkAvailable()
 {
     IPAddress ip;
     ip.fromString(_ip);
@@ -323,7 +327,7 @@ bool PeplinkRouter::getClientList()
   JsonDocument recvDoc;
   String response = _sendJsonRequest(PEPLINKAPI_HTTP_REQUEST_GET, uri, NULL);
   if (!response.length())
-    return false;
+    return (_available = false);
 
   Serial.println("getClientList() success");
 
@@ -343,8 +347,7 @@ bool PeplinkRouter::getClientList()
     clientInfo.scope = (routerClient["scope"].as<String>() == "api") ? CLIENT_SCOPE_READ_WRITE : CLIENT_SCOPE_READ_ONLY;
     _clients.push_back(clientInfo);
   }
-
-  return true;
+  return (_available = true);
 }
 
 bool PeplinkRouter::_refreshToken()
@@ -360,7 +363,7 @@ bool PeplinkRouter::_refreshToken()
     }
     else
       return false;
-    return true;
+    return (_available = true);
 }
 
 bool PeplinkRouter::_grantClientToken(PeplinkAPI_ClientInfo &client)
@@ -382,7 +385,7 @@ bool PeplinkRouter::_grantClientToken(PeplinkAPI_ClientInfo &client)
 
   String response = _sendJsonRequest(PEPLINKAPI_HTTP_REQUEST_POST, uri, json_string);
   if (!response.length())
-    return false;
+    return (_available = false);
 
   Serial.println("_grantClientToken() success");
 
@@ -419,7 +422,7 @@ bool PeplinkRouter::_grantClientToken(PeplinkAPI_ClientInfo &client)
     prefs.putBytes(COOKIES_NAMESPACE, &jar, sizeof(jar));
     prefs.end();
   }
-  return true;
+  return (_available = true);
 }
 
 bool PeplinkRouter::getWanTraffic(uint8_t id)
@@ -430,7 +433,7 @@ bool PeplinkRouter::getWanTraffic(uint8_t id)
   JsonDocument recvDoc;
   String response = _sendJsonRequest(PEPLINKAPI_HTTP_REQUEST_GET, uri, NULL);
   if (!response.length())
-    return false;
+    return (_available = false);
 
   Serial.println("getWanTraffic() success");
 
@@ -470,7 +473,7 @@ bool PeplinkRouter::getWanTraffic(uint8_t id)
     }
   }
 
-  return true;
+  return (_available = true);
 } 
 
 bool PeplinkRouter::getWanStatus(uint8_t id)
@@ -500,7 +503,7 @@ bool PeplinkRouter::getWanStatus(uint8_t id)
   JsonDocument recvDoc;
   String response = _sendJsonRequest(PEPLINKAPI_HTTP_REQUEST_GET, uri, NULL);
   if (!response.length())
-    return false;
+    return (_available = false);
 
   Serial.println("getWanStatus() success");
 
@@ -567,7 +570,7 @@ bool PeplinkRouter::getWanStatus(uint8_t id)
 
   }
   getWanTraffic(id);
-  return true;
+  return (_available = true);
 }
 
 String PeplinkRouter::_sendJsonRequest(PeplinkAPI_HTTPRequest_t type, String &endpoint, char *body)
@@ -734,7 +737,7 @@ bool PeplinkRouter::getInfo()
 
   String response = _sendJsonRequest(PEPLINKAPI_HTTP_REQUEST_GET, uri, NULL);
   if (!response.length())
-    return false;
+    return (_available = false);
 
   Serial.println("getInfo() success");
 
@@ -748,7 +751,7 @@ bool PeplinkRouter::getInfo()
   _info.productCode = recvDoc["response"]["device"]["productCode"].as<String>();
   _info.hardwareRev = recvDoc["response"]["device"]["hardwareRevision"].as<String>();
 
-  return true;
+  return (_available = true);
 }
 
 bool PeplinkRouter::getLocation()
@@ -759,7 +762,7 @@ bool PeplinkRouter::getLocation()
 
   String response = _sendJsonRequest(PEPLINKAPI_HTTP_REQUEST_GET, uri, NULL);
   if (!response.length())
-    return false;
+    return (_available = false);
 
   Serial.println("getLocation() success");
 
@@ -769,5 +772,5 @@ bool PeplinkRouter::getLocation()
   _location.latitude = recvDoc["response"]["location"]["latitude"].as<String>();
   _location.longitude = recvDoc["response"]["location"]["longitude"].as<String>();
   _location.altitude = recvDoc["response"]["location"]["altitude"].as<String>();
-  return true;
+  return (_available = true);
 }

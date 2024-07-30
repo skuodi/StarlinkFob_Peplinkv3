@@ -147,7 +147,7 @@ public:
     }
 
     /// @brief Ping the router IP address
-    bool begin(){ return isAvailable(); }
+    bool begin(){ return checkAvailable(); }
 
     
     /// @brief Initialize the router object by testing the validity of cookes and accesss token and refreshing them as necessary
@@ -165,8 +165,9 @@ public:
     /// @note   Default ping timeout is 10s
     /// @return true on ping success
     /// @return false on ping fail
-    bool isAvailable();
+    bool checkAvailable();
 
+    bool available() const { return _available;}
 
     bool update() { return (getClientList() && getWanStatus() && getInfo() && getLocation()); }
     

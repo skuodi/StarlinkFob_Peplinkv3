@@ -162,6 +162,7 @@ typedef struct
   TaskHandle_t buttonWatch;
   TaskHandle_t dataUpdate;
   TaskHandle_t wifiWatch;
+  TaskHandle_t routerConnect;
 }StarlinkFob_TaskState_t;
 
 typedef struct 

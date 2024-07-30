@@ -18,6 +18,7 @@
 typedef enum
 {
   UI_COUNTDOWN_TYPE_WIFI = 1,     // Wi-Fi STA connecting countdown
+  UI_COUNTDOWN_TYPE_ROUTER,
   UI_COUNTDOWN_TYPE_SHUTDOWN,
   UI_COUNTDOWN_TYPE_REBOOT,
   UI_COUNTDOWN_TYPE_FACTORY_RESET,
@@ -53,6 +54,7 @@ size_t pingTargetsPageId;
 size_t routerPageId;
 size_t routerInfoPageId;
 size_t routerLocationPageId;
+size_t routerUnavailablePageId;
 size_t routerWANListPageId;
 size_t routerWANInfoPageId;
 size_t routerWANSummaryPageId;
@@ -78,6 +80,7 @@ void screenUpdateTask(void *arg);
 void countdownTask(void *arg);
 void dataUpdateTask(void *arg);
 void wifiWatchTask(void* arg);
+void routerConnectTask(void* arg);
 
 void goToFobInfoPage(void *arg = NULL)
 {
@@ -135,6 +138,11 @@ void goToRouterInfoPage(void *arg = NULL)
 void goToRouterLocationPage(void *arg = NULL)
 {
   fob.menu.goToPage(routerLocationPageId);
+}
+
+void goToRouterUnavailablePage(void *arg = NULL)
+{
+  fob.menu.goToPage(routerUnavailablePageId);
 }
 
 void goToRouterWANListPage(void *arg = NULL)
@@ -275,7 +283,7 @@ void lcdPrintRouterInfo(void *arg = NULL)
 
   M5.Lcd.drawBitmap(0, cursorY, 40, 40, loading, 0);
 
-  if (!fob.routers.router.isAvailable() || !fob.routers.router.getInfo())
+  if (!fob.routers.router.checkAvailable() || !fob.routers.router.getInfo())
   {
     M5.Lcd.setCursor(cursorX, cursorY);
     M5.Lcd.setTextColor(RED, BLACK);
@@ -300,7 +308,7 @@ void lcdPrintRouterLocation(void *arg = NULL)
 
   M5.Lcd.println("Fetching...");
 
-  if (!fob.routers.router.isAvailable() || !fob.routers.router.getLocation())
+  if (!fob.routers.router.checkAvailable() || !fob.routers.router.getLocation())
   {
     M5.Lcd.setCursor(cursorX, cursorY);
     M5.Lcd.setTextColor(RED, BLACK);
@@ -313,6 +321,12 @@ void lcdPrintRouterLocation(void *arg = NULL)
   M5.Lcd.printf("Longitude:%s\n", fob.routers.router.location().longitude.c_str());
   M5.Lcd.printf("Latitude :%s\n", fob.routers.router.location().latitude.c_str());
   M5.Lcd.printf("Altitude :%s\n", fob.routers.router.location().altitude.c_str());
+}
+
+void lcdPrintRouterUnavailable(void *arg = NULL)
+{
+  fob.booting = true;
+  M5.Lcd.println(" Router Unavailable!\n Unable to continue.\n Please reboot"); 
 }
 
 /// @brief Fetch and print the selected WAN information
@@ -471,7 +485,7 @@ void printRouterWanStatus(void* arg = NULL)
   const int cursorY = M5.Lcd.getCursorY();
   M5.Lcd.drawBitmap(200, cursorY, 40, 40, loading, 0);
 
-  if (!fob.routers.router.isAvailable() || !fob.routers.router.getWanStatus())
+  if (!fob.routers.router.checkAvailable() || !fob.routers.router.getWanStatus())
   {
     M5.Lcd.setCursor(cursorX, cursorY);
     M5.Lcd.fillRect(0, cursorY, M5.Lcd.width(), M5.Lcd.height() - cursorY, MINU_BACKGROUND_COLOUR_DEFAULT);
@@ -711,6 +725,21 @@ void startWiFiConnectCountdown(void *arg = NULL)
   }
 }
 
+void startRouterConnectCountdown(void *arg = NULL)
+{
+  fob.menu.pages()[countdownPageId]->setTitle("CONNECTING ROUTER");
+
+  if (fob.menu.currentPageId() != countdownPageId)
+    goToCountdownPage();
+
+  vTaskDelay(2000);
+
+  if (fob.tasks.countdown)
+    vTaskDelete(fob.tasks.countdown);
+  xTaskCreatePinnedToCore(countdownTask, "Router Countdown", 4096, (void *)UI_COUNTDOWN_TYPE_ROUTER, 2, &fob.tasks.countdown, ARDUINO_RUNNING_CORE);
+
+}
+
 /// @brief Start the Wi-Fi access point
 void startWiFiAP(void *arg)
 {
@@ -838,7 +867,7 @@ void getWanList(void *arg)
   const int cursorY = M5.Lcd.getCursorY();
   Serial.println("Fetching WAN list");
 
-  if (!fob.routers.router.isAvailable() || !fob.routers.router.getWanStatus())
+  if (!fob.routers.router.checkAvailable() || !fob.routers.router.getWanStatus())
   {
     Serial.println("Fetching WAN list failed!");
     fob.menu.pages()[routerWANListPageId]->addItem(goToRouterPage, NULL, NULL);
@@ -1127,6 +1156,13 @@ void uiMenuInit(void)
   routerLocationPage.setRenderedCallback(lcdPrintRouterLocation);
   routerLocationPageId = fob.menu.addPage(routerLocationPage);
 
+  MinuPage routerUnavailablePage("ROUTER UNAVAILABLE", fob.menu.numPages(), true);
+  routerUnavailablePage.addItem(goToHomePage, NULL, NULL);
+  routerUnavailablePage.setOpenedCallback(pageOpenedCallback);
+  routerUnavailablePage.setClosedCallback(pageClosedCallback);
+  routerUnavailablePage.setRenderedCallback(lcdPrintRouterUnavailable);
+  routerUnavailablePageId = fob.menu.addPage(routerUnavailablePage);
+
   MinuPage routerWANListPage("WAN LIST", fob.menu.numPages());
   routerWANListPage.setOpenedCallback(getWanList);
   routerWANListPage.setClosedCallback(wanListPageClosed);
@@ -1198,6 +1234,7 @@ void uiMenuInit(void)
         routerPageId < 0 ||
         routerInfoPageId < 0 ||
         routerLocationPageId < 0 ||
+        routerUnavailablePageId < 0 ||
         routerWANListPageId < 0 ||
         routerWANInfoPageId < 0 ||
         timePageId < 0 ||
@@ -1211,6 +1248,7 @@ void uiMenuInit(void)
   xTaskCreatePinnedToCore(screenUpdateTask, "Screen Update Task", 4096, NULL, 1, &fob.tasks.screenUpdate, ARDUINO_RUNNING_CORE);
   xTaskCreatePinnedToCore(buttonWatchTask, "Button Task", 4096, NULL, 1, &fob.tasks.buttonWatch, ARDUINO_RUNNING_CORE);
   xTaskCreatePinnedToCore(wifiWatchTask, "WiFi Watch Task", 4096, NULL, 1, &fob.tasks.wifiWatch, ARDUINO_RUNNING_CORE);
+  xTaskCreatePinnedToCore(routerConnectTask, "Router connect", 4096, NULL, 1, &fob.tasks.routerConnect, ARDUINO_RUNNING_CORE);
   startWiFiConnectCountdown();
 
   while(fob.booting)
@@ -1499,6 +1537,11 @@ void countdownTask(void *arg)
     min = REBOOT_COUNTDOWN_SECONDS / 60;
     sec = REBOOT_COUNTDOWN_SECONDS % 60;
   }
+  else if( countdownType == UI_COUNTDOWN_TYPE_ROUTER)
+  {
+    min = WIFI_COUNTDOWN_SECONDS / 60;
+    sec = WIFI_COUNTDOWN_SECONDS % 60;
+  }
   else
   {
 #ifdef UI_DEBUG_LOG
@@ -1522,6 +1565,8 @@ void countdownTask(void *arg)
   while (min >= 0 || sec >= 0)
   {
     if (countdownType == UI_COUNTDOWN_TYPE_WIFI && WiFi.status() == WL_CONNECTED)
+      break;
+    else if(countdownType == UI_COUNTDOWN_TYPE_ROUTER && fob.routers.router.available())
       break;
 
     if (--sec < 0)
@@ -1595,8 +1640,10 @@ void countdownTask(void *arg)
       delay(100);
       M5.Power.powerOff();
     }
-    else
+    else if (countdownType == UI_COUNTDOWN_TYPE_REBOOT)
       ESP.restart();
+    else if (countdownType == UI_COUNTDOWN_TYPE_ROUTER)
+      goToRouterUnavailablePage();
   }
   else
   {
@@ -1621,6 +1668,7 @@ void countdownTask(void *arg)
         }
         goToPingTargetsPage();
         xTaskNotify(fob.tasks.wifiWatch, 1, eSetValueWithOverwrite);
+        xTaskNotify(fob.tasks.routerConnect, 1, eSetValueWithOverwrite);
       }
       else
       {  
@@ -1633,6 +1681,15 @@ void countdownTask(void *arg)
     }
     else if (countdownType == UI_COUNTDOWN_TYPE_SHUTDOWN || countdownType == UI_COUNTDOWN_TYPE_REBOOT)
       goToHomePage();
+    else if (countdownType == UI_COUNTDOWN_TYPE_ROUTER)
+    {
+      if (stopCountdown)
+        goToRouterUnavailablePage();
+      else if(lastVisitedPageId == pingTargetsPageId)
+        goToRouterWANListPage();
+      else
+        fob.menu.goToPage(lastVisitedPageId);
+    }
   }
 
 #ifdef UI_BEEP
@@ -1719,5 +1776,20 @@ void wifiWatchTask(void* arg)
       lastVisitedPageId = fob.menu.currentPageId();
       startWiFiConnectCountdown(NULL);
     }
+    if(!fob.booting && !fob.tasks.countdown && WiFi.getMode() == WIFI_MODE_STA && WiFi.status() == WL_CONNECTED && !fob.routers.router.available())
+    {
+      lastVisitedPageId = fob.menu.currentPageId();
+      startRouterConnectCountdown(NULL);
+    }
+  }
+}
+
+void routerConnectTask(void* arg)
+{
+  ulTaskNotifyTake(false, portMAX_DELAY);
+  for(;;)
+  {
+    if(!fob.booting && fob.tasks.countdown && WiFi.getMode() == WIFI_MODE_STA && WiFi.status() == WL_CONNECTED && !fob.routers.router.available())
+      fob.routers.router.checkAvailable();
   }
 }
