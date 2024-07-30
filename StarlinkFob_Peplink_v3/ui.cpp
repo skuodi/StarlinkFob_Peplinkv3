@@ -329,7 +329,7 @@ void lcdPrintRouterWANInfo(void *arg = NULL)
 
   for (PeplinkAPI_WAN *wan : wanList)
   {
-    if (!strcmp(wan->name.c_str(), lastSelectedWAN.c_str()))
+    if (wan->name == lastSelectedWAN)
     {
       if(!fob.routers.router.getWanStatus(wan->id))
       {
@@ -1641,7 +1641,8 @@ void dataUpdateTask(void *arg)
   Serial.printf("Started data update task: type %d\n", updateType);
 #endif
   M5.Lcd.fillRect(0, cursorY, M5.Lcd.width(), M5.Lcd.height() - cursorY, MINU_BACKGROUND_COLOUR_DEFAULT);
-
+  if(updateType == UI_UPDATE_TYPE_ROUTER_INFO)
+    fob.routers.router.getWanStatus();
   while (1)
   {
     M5.Lcd.setCursor(cursorX, cursorY);

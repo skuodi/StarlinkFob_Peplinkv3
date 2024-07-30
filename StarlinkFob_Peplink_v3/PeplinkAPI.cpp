@@ -475,9 +475,23 @@ bool PeplinkRouter::getWanTraffic(uint8_t id)
 
 bool PeplinkRouter::getWanStatus(uint8_t id)
 {
-  for(PeplinkAPI_WAN* wan: _wan)
-    delete wan;
-  _wan.clear();
+  if(id = 0)
+  {
+    for(PeplinkAPI_WAN* wan: _wan)
+      delete wan;
+    _wan.clear();
+  }
+  else
+  {
+    for(auto it = _wan.begin(); it < _wan.end(); ++it)
+    {
+      if((*it)->id == id)
+      {
+        delete (*it);
+        _wan.erase(it);
+      }
+    }
+  }
 
   String uri = "/api/status.wan.connection?accessToken=" + _token;
   if(id != 0 && id <= 3)
