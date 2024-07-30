@@ -736,7 +736,7 @@ void startRouterConnectCountdown(void *arg = NULL)
 
   if (fob.tasks.countdown)
     vTaskDelete(fob.tasks.countdown);
-  xTaskCreatePinnedToCore(countdownTask, "Router Countdown", 4096, (void *)UI_COUNTDOWN_TYPE_ROUTER, 2, &fob.tasks.countdown, ARDUINO_RUNNING_CORE);
+  xTaskCreatePinnedToCore(countdownTask, "Router Countdown", 8192, (void *)UI_COUNTDOWN_TYPE_ROUTER, 2, &fob.tasks.countdown, ARDUINO_RUNNING_CORE);
 
 }
 
@@ -1253,8 +1253,8 @@ void uiMenuInit(void)
   xTaskCreatePinnedToCore(screenWatchTask, "Screen Watch Task", 4096, NULL, 1, &fob.tasks.screenWatch, ARDUINO_RUNNING_CORE);
   xTaskCreatePinnedToCore(screenUpdateTask, "Screen Update Task", 4096, NULL, 1, &fob.tasks.screenUpdate, ARDUINO_RUNNING_CORE);
   xTaskCreatePinnedToCore(buttonWatchTask, "Button Task", 4096, NULL, 1, &fob.tasks.buttonWatch, ARDUINO_RUNNING_CORE);
-  xTaskCreatePinnedToCore(wifiWatchTask, "WiFi Watch Task", 4096, NULL, 1, &fob.tasks.wifiWatch, ARDUINO_RUNNING_CORE);
-  xTaskCreatePinnedToCore(routerConnectTask, "Router connect", 4096, NULL, 1, &fob.tasks.routerConnect, ARDUINO_RUNNING_CORE);
+  xTaskCreatePinnedToCore(wifiWatchTask, "WiFi Watch Task", 2048, NULL, 1, &fob.tasks.wifiWatch, ARDUINO_RUNNING_CORE);
+  xTaskCreatePinnedToCore(routerConnectTask, "Router connect", 2048, NULL, 1, &fob.tasks.routerConnect, ARDUINO_RUNNING_CORE);
   startWiFiConnectCountdown();
 
   while(fob.booting)
