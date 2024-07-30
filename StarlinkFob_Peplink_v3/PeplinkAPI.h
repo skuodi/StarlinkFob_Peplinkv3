@@ -229,6 +229,8 @@ public:
     size_t numClients() const { return _clients.size(); };
     std::vector<PeplinkAPI_WAN *> wanStatus() const { return _wan; };
 
+    bool remoterReboot();
+
 private:
     
     /// @brief Send an HTTP request and handle any authentication errors before returning the response

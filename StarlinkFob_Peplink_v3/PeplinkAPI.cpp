@@ -774,3 +774,16 @@ bool PeplinkRouter::getLocation()
   _location.altitude = recvDoc["response"]["location"]["altitude"].as<String>();
   return (_available = true);
 }
+
+bool PeplinkRouter::remoterReboot()
+{
+  String uri = "/api/cmd.system.reboot?accessToken=" + _token;
+
+  JsonDocument recvDoc;
+
+  String response = _sendJsonRequest(PEPLINKAPI_HTTP_REQUEST_GET, uri, NULL);
+  if (!response.length())
+    return (_available = false);
+  _available = false;
+  return true;
+}

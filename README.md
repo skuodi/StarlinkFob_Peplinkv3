@@ -32,7 +32,7 @@
   - [x] [4. WAN status PAGE](#4-wan-status-page)
   - [x] [5. WAN summary page display](#5-wan-summary-page-display)
   - [x] [6. Cellular signal indicator](#6-cellular-signal-indicator)
-  - [7. Add router reboot option](#7-add-router-reboot-option)
+  - [x] [7. Add router reboot option](#7-add-router-reboot-option)
 
 ## Misc
 
@@ -123,6 +123,8 @@ Add detection of button c , short press via interrupt.
 https://community.m5stack.com/topic/3722/m5stickc-plus-detect-power-button-momentary-press
 If you can get detection of button C to work, make sure press go back a menu, regardless of the currently selected item.
 ```
+
+- Button C detection is implemented but there is no straightforward way to go to the previous page since each page has unique preparatory functions/conditions that must be called/met before and after rendering the page. This would mean re-implementing the logic used to move between pages
 
 ### 5. Interrupts for button press detection
 

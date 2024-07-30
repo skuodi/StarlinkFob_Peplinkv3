@@ -1066,6 +1066,11 @@ void initiateFactoryReset(void *arg = NULL)
   startFactoryResetCountdown();
 }
 
+void startRouterRemoteReboot(void *arg = NULL)
+{
+  fob.routers.router.remoterReboot();
+}
+
 void uiMenuInit(void)
 {
   MinuPage countdownPage(NULL, fob.menu.numPages());
@@ -1136,6 +1141,7 @@ void uiMenuInit(void)
   routerPage.addItem(goToRouterInfoPage, "Info", NULL);
   routerPage.addItem(goToRouterLocationPage, "Location", NULL);
   routerPage.addItem(goToRouterWANListPage, "WAN Status", NULL);
+  routerPage.addItem(startRouterRemoteReboot, "Remote Reboot", NULL);
   routerPage.addItem(goToHomePage, "<--", NULL);
   routerPage.setOpenedCallback(pageOpenedCallback);
   routerPage.setClosedCallback(pageClosedCallback);
